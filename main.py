@@ -3,7 +3,9 @@ import openai
 import os
 from twilio.twiml.messaging_response import MessagingResponse
 
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+client = openai.OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY")
+)
 
 app = Flask(__name__)
 
@@ -13,8 +15,8 @@ def bot():
     response = MessagingResponse()
     msg = response.message()
 
-    # AI reply using ChatGPT
-    chat = openai.ChatCompletion.create(
+    # AI reply using new OpenAI SDK
+    chat = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "You are a warm, emotionally intelligent relationship coach for girls aged 16-25."},
@@ -28,4 +30,3 @@ def bot():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=81)
-    
