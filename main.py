@@ -1,8 +1,9 @@
 from flask import Flask, request
 import openai
+import os
 from twilio.twiml.messaging_response import MessagingResponse
 
-openai.api_key = "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"
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 app = Flask(__name__)
 
