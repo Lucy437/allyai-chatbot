@@ -51,8 +51,29 @@ def bot():
             msg.body(flows[incoming_msg][0])
         else:
             msg.body(
-                "Hi, I’m Ally 👋\nI’m here to help with tricky relationship and friendship situations.\n\nChoose one to begin:\n\n"
+                "Hi, I’m Ally 👋\nI’m here to help with tricky relationship and friendship situations.\n\n"
+                "Choose one to begin:\n\n"
                 "1️⃣ A friend keeps joking about things that hurt me\n"
                 "2️⃣ My partner pulls away when I say no\n"
                 "3️⃣ I don’t feel confident speaking up in groups\n"
                 "4️⃣ My partner controls what I wear or say\n\n"
+                "Reply with a number (1–4) to start.\n\n"
+                "Type 'restart' at any time to return to the menu 💛"
+            )
+    else:
+        # Continue the flow
+        flow_id = session['current_flow']
+        step = session.get('step', 0) + 1
+
+        if step < len(flows[flow_id]):
+            session['step'] = step
+            msg.body(flows[flow_id][step])
+        else:
+            msg.body(
+                "Thank you for sharing with me 💛 If you'd like to talk about something else, just type 'restart' to see the menu again."
+            )
+            session.pop('current_flow', None)
+            session.pop('step', None)
+
+    return str(response)
+
