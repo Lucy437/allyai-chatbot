@@ -1,93 +1,110 @@
-from flask import Flask, request, session
+from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
 
 app = Flask(__name__)
-app.secret_key = 'lucy-unicef-secret-key'
+user_state = {}  # Tracks where each user is in the conversation
 
-flows = {
-    "1": {
-        "messages": [
-            "Thanks for sharing that. It sounds like your friend is joking about things you’re sensitive about. That’s hard, especially when it makes you feel small.\n\nDo you feel like she knows this really bothers you? (Yes / No / Not sure)",
-            "When she makes those jokes, how do you usually feel — angry, embarrassed, hurt?",
-            "You’re not 'too sensitive.' You’re being honest about what’s hurtful. That’s a strength.\n\nWould you like help finding the words to talk to her? (Yes / No)",
-            "In a strong friendship, you should feel safe — not like you're the punchline. You deserve kindness and respect, and it’s okay to say when something crosses the line."
-        ],
-        "yes_response": "Here’s something you could say:\n\n“Hey, can I share something with you? Sometimes when you joke about [insert topic], it hits a sensitive spot for me. I know you probably don’t mean to hurt me, but it really affects how I feel. I value our friendship, and I’d appreciate it if we could talk about this.” 💛"
-    },
-    "2": {
-        "messages": [
-            "That kind of emotional withdrawal can be really painful. Can I ask—how do you feel when he pulls away like that?",
-            "Do you think he does it to pressure you into changing your mind?",
-            "That behavior is sometimes called emotional manipulation. You have the right to set boundaries.\n\nWould you like help preparing a conversation?",
-            "When someone withdraws love or attention as a punishment, that’s not love. That’s control."
-        ],
-        "yes_response": "Here’s a message you could use to open a dialogue with your partner:\n\n“I’ve noticed that when I say no or express how I feel, there’s distance between us afterward. It leaves me feeling like I can’t speak up without losing connection. I want a relationship where we can disagree and still feel close. Can we talk about this?” 💬"
-    },
-    "3": {
-        "messages": [
-            "Thank you for being honest. Not feeling confident in groups is something so many people experience.\n\nCan I ask—what usually holds you back from speaking?",
-            "Being thoughtful is a strength—but your ideas deserve to be heard. Do you sometimes feel like you need people to agree with you to feel valid?",
-            "Try starting small: ask a question, share one idea. Over time, you’ll realize your presence matters, even when it’s quiet.",
-            "Confidence doesn’t start with being loud. It starts with trusting that your voice deserves space."
-        ],
-        "yes_response": "Here’s something gentle you could say to your group of friends or classmates:\n\n“Hey, I’ve realized I often stay quiet in our group because I second-guess myself. I’m working on building confidence, and I’d love if we could create space where everyone’s voice is heard — including mine. Just wanted to share that with you.” 🌱"
-    },
-    "4": {
-        "messages": [
-            "Feeling like you have to filter yourself to keep your partner happy can be really draining.\n\nCan I ask—have you ever told him how this makes you feel?",
-            "A relationship that requires you to shrink is not one that helps you grow. Do you feel like you're slowly losing yourself?",
-            "In healthy relationships, both people grow together—not one shaping the other to their mold.",
-            "You can love someone and still protect your identity. Let’s talk through how to express this to him if you're ready."
-        ],
-        "yes_response": "Here’s a gentle but assertive message you can use to begin setting a boundary:\n\n“I’ve been changing how I dress and what I say to avoid upsetting you. But lately, I feel like I’m losing parts of myself. I love being in a relationship where we support each other — not where I feel like I need to shrink. Can we talk about this?” 🌻"
-    }
-}
+# Helper functions
+def get_scenarios_for_category(category):
+    if category == "1":
+        return ("Which situation best describes what you're going through?\n"
+                "1. He ghosts me after arguments.\n"
+                "2. I need permission to see friends.\n"
+                "3. He likes other girls' photos online.")
+    elif category == "2":
+        return ("Choose a scenario:\n"
+                "1. My friend jokes about my insecurities.\n"
+                "2. I feel left out in group settings.")
+    elif category == "3":
+        return ("Choose a scenario:\n"
+                "1. My family constantly comments on how I look.\n"
+                "2. I feel left out because I'm not allowed on social media.")
+    elif category == "4":
+        return ("Choose a scenario:\n"
+                "1. I'm scared to speak up in groups.\n"
+                "2. I'm afraid to try new things because I might fail.")
+    elif category == "5":
+        return ("Choose a scenario:\n"
+                "1. I don’t like how I look.\n"
+                "2. I compare myself to people online and feel behind.")
+    elif category == "6":
+        return ("Choose a scenario:\n"
+                "1. I feel very anxious and can't calm down.\n"
+                "2. Nothing makes sense anymore.\n"
+                "3. My boyfriend threatened me.\n"
+                "4. He hit me, but said sorry.")
+    else:
+        return "Please enter a valid category number."
 
+def get_flow_for_scenario(category, scenario):
+    if category == "1" and scenario == "1":
+        return ("That sounds so frustrating. Feeling ignored after a disagreement can really hurt — especially when you're just trying to work things out.\n\nHas this happened more than once?")
+    elif category == "1" and scenario == "2":
+        return ("It makes sense that you're feeling stuck. You shouldn't have to choose between your relationship and your friends.\n\nWhat does he usually say when you want to hang out with others?")
+    elif category == "1" and scenario == "3":
+        return ("It's totally normal to feel insecure when your partner engages with others online. You're not alone in this.\n\nHave you talked to him about how this makes you feel?")
+    elif category == "2" and scenario == "1":
+        return ("When someone laughs off our feelings or calls us 'too sensitive,' it can really hurt.\n\nWhat does your friend usually say that bothers you the most?")
+    elif category == "2" and scenario == "2":
+        return ("Feeling invisible around a close friend is painful.\n\nHas this been happening often or only in certain situations?")
+    # Add more flows here as you expand
+    else:
+        return "Please enter a valid scenario number."
+
+# WhatsApp webhook
 @app.route("/bot", methods=["POST"])
 def bot():
     incoming_msg = request.values.get('Body', '').strip().lower()
+    from_number = request.values.get('From')
     response = MessagingResponse()
     msg = response.message()
 
-    if incoming_msg in ["restart", "menu", "hi", "hello"]:
-        session.pop('current_flow', None)
-        session.pop('step', None)
+    # Track user session
+    if from_number not in user_state:
+        user_state[from_number] = {"stage": "greeting"}
 
-    if 'current_flow' not in session:
-        if incoming_msg in flows:
-            session['current_flow'] = incoming_msg
-            session['step'] = 0
-            msg.body(flows[incoming_msg]["messages"][0])
+    state = user_state[from_number]
+
+    # Step 1: Greet user and show categories
+    if state["stage"] == "greeting":
+        msg.body("Hi, I'm Ally 👋\nI'm here to support you.\n\nWhat do you want to talk about today?\n\n"
+                 "1. Romantic Partner Issues\n"
+                 "2. Friendship Challenges\n"
+                 "3. Family Tensions\n"
+                 "4. Building Self-Confidence\n"
+                 "5. Overcoming Insecurity\n"
+                 "6. Urgent Advice\n\nPlease reply with the number.")
+        state["stage"] = "category"
+        return str(response)
+
+    # Step 2: Handle category selection
+    elif state["stage"] == "category":
+        if incoming_msg in ["1", "2", "3", "4", "5", "6"]:
+            state["category"] = incoming_msg
+            state["stage"] = "scenario"
+            msg.body(get_scenarios_for_category(incoming_msg))
         else:
-            msg.body(
-                "Hi, I’m Ally 👋\nI’m here to help with tricky relationship and friendship situations.\n\n"
-                "Choose one to begin:\n\n"
-                "1️⃣ A friend keeps joking about things that hurt me\n"
-                "2️⃣ My partner pulls away when I say no\n"
-                "3️⃣ I don’t feel confident speaking up in groups\n"
-                "4️⃣ My partner controls what I wear or say\n\n"
-                "Reply with a number (1–4) to start.\n\n"
-                "Type 'restart' at any time to return to the menu 💛"
-            )
+            msg.body("Please enter a number from 1 to 6 to choose a category.")
+        return str(response)
+
+    # Step 3: Handle scenario selection
+    elif state["stage"] == "scenario":
+        category = state["category"]
+        scenario = incoming_msg
+        flow = get_flow_for_scenario(category, scenario)
+        if "Please enter a valid" in flow:
+            msg.body(flow)
+        else:
+            msg.body(flow)
+            state["stage"] = "completed"
+        return str(response)
+
+    # Optional reset
+    elif incoming_msg == "restart":
+        user_state[from_number] = {"stage": "greeting"}
+        msg.body("Let's start over. 👋")
+        return str(response)
+
     else:
-        flow_id = session['current_flow']
-        step = session.get('step', 0)
-
-        if incoming_msg == "yes" and step == 2:
-            msg.body(flows[flow_id]["yes_response"])
-            return str(response)
-
-        step += 1
-        session['step'] = step
-
-        if step < len(flows[flow_id]["messages"]):
-            msg.body(flows[flow_id]["messages"][step])
-        else:
-            msg.body(
-                "Thank you for sharing with me 💛 If you'd like to talk about something else, just type 'restart' to see the menu again."
-            )
-            session.pop('current_flow', None)
-            session.pop('step', None)
-
-    return str(response)
-
+        msg.body("If you'd like to start again, type 'restart'.")
+        return str(response)
