@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from twilio.twiml.messaging_response import MessagingResponse
 
 app = Flask(__name__)
@@ -124,6 +124,7 @@ def generate_feedback(scores, identity):
         f"But we’ll also work on your {weakest_trait} — because that’s how you become unstoppable 💫"
     )
 
+# WhatsApp bot route
 @app.route("/bot", methods=["POST"])
 def bot():
     incoming_msg = request.values.get('Body', '').strip().lower()
@@ -177,5 +178,48 @@ def bot():
             msg.body("Please reply with 1 or 2 to choose.")
         return str(response)
 
-    msg.body("If you'd like to start again, type 'restart'.")
-    return str(response)
+# Lovable API endpoint
+@app.route("/allyai", methods=["POST"])
+def allyai():
+    data = request.json
+    user_id = data.get("user_id")
+    message = data.get("message", "").strip().lower()
+
+    if user_id not in user_state:
+        user_state[user_id] = {"stage": "intro"}
+
+    state = user_state[user_id]
+
+    if message == "start assessment":
+        user_sessions[user_id] = {"current_q": 0, "answers": []}
+        first_q = get_next_assessment_question(user_id)
+        return jsonify({"reply": "Let’s begin! ✨\n\n" + first_q})
+
+    if user_id in user_sessions:
+        handle_assessment_answer(user_id, message)
+        next_q = get_next_assessment_question(user_id)
+        if next_q:
+            return jsonify({"reply": next_q})
+        else:
+            scores = calculate_trait_scores(user_sessions[user_id]["answers"])
+            identity = assign_identity(scores)
+            feedback = generate_feedback(scores, identity)
+            del user_sessions[user_id]
+            return jsonify({"reply": feedback})
+
+    if state["stage"] == "intro":
+        state["stage"] = "choose_path"
+        return jsonify({"reply": "Hi, I'm Ally 👋\nWould you like to:\n1. Ask a question\n2. Take a quick assessment?"})
+
+    if state["stage"] == "choose_path":
+        if message == "1":
+            state["stage"] = "greeting"
+            return jsonify({"reply": "Great! What's your question?"})
+        elif message == "2":
+            user_sessions[user_id] = {"current_q": 0, "answers": []}
+            first_q = get_next_assessment_question(user_id)
+            return jsonify({"reply": "Let’s begin! ✨\n\n" + first_q})
+        else:
+            return jsonify({"reply": "Please reply with 1 or 2 to choose."})
+
+    return jsonify({"reply": "If you'd like to start again, type 'restart'."})
