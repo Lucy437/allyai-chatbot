@@ -108,18 +108,17 @@ def assign_identity(scores):
     top_two = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:2]
     combo = frozenset([t[0] for t in top_two])
     identity_map = {
-        frozenset(["Confidence", "Communication"]): "The Empowered Queen",
-        frozenset(["Self-Awareness", "Empathy"]): "The Healer Oracle",
-        frozenset(["Boundary-Setting", "Self-Respect"]): "The Guardian Queen",
+        frozenset(["Confidence", "Communication"]): "👑 The Empowered Queen\nYou own your voice and lead with unapologetic strength. When you speak, people listen. You turn your truth into action and your presence into power.",
+        frozenset(["Self-Awareness", "Empathy"]): "🪞 The Healer Oracle\nYou see into the hearts of others and the depths of your own soul. Your empathy is matched only by your inner wisdom — a powerful combo that brings light to the darkest places.",
+        frozenset(["Boundary-Setting", "Self-Respect"]): "🛡️ The Guardian Queen\nYou are the sovereign of your space. With grace and steel, you defend your peace, protect your heart, and teach others what it means to honor you.",
     }
-   return identity_map.get(combo, "👑 The Growth Queen\nYou're on a beautiful path of self-discovery. You’re growing in multiple areas and becoming more aware of your inner power. Keep showing up — your transformation is already happening.")
-
+    return identity_map.get(combo, "👑 The Growth Queen\nYou're on a beautiful path of self-discovery. You’re growing in multiple areas and becoming more aware of your inner power. Keep showing up — your transformation is already happening.")
 
 def generate_feedback(scores, identity):
     bars = "\n".join([f"{trait}: {int(score * 25)}%" for trait, score in scores.items()])
     weakest_trait = min(scores, key=scores.get)
     return (
-        f"🌟 Your AllyAI Identity: *{identity}*\n\n"
+        f"🌟 Your AllyAI Identity:\n{identity}\n\n"
         f"Here’s your growth profile:\n{bars}\n\n"
         f"You’re strongest in {max(scores, key=scores.get)}.\n"
         f"But we’ll also work on your {weakest_trait} — because that’s how you become unstoppable 💫"
