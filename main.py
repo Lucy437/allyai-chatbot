@@ -112,7 +112,8 @@ def assign_identity(scores):
         frozenset(["Self-Awareness", "Empathy"]): "The Healer Oracle",
         frozenset(["Boundary-Setting", "Self-Respect"]): "The Guardian Queen",
     }
-    return identity_map.get(combo, "The Growth Explorer")
+   return identity_map.get(combo, "👑 The Growth Queen\nYou're on a beautiful path of self-discovery. You’re growing in multiple areas and becoming more aware of your inner power. Keep showing up — your transformation is already happening.")
+
 
 def generate_feedback(scores, identity):
     bars = "\n".join([f"{trait}: {int(score * 25)}%" for trait, score in scores.items()])
