@@ -3,55 +3,90 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 app = Flask(__name__)
 user_state = {}  # Tracks where each user is in the conversation
+user_sessions = {}  # Tracks assessment sessions
 
-# Helper functions
-def get_scenarios_for_category(category):
-    if category == "1":
-        return ("Which situation best describes what you're going through?\n"
-                "1. He ghosts me after arguments.\n"
-                "2. I need permission to see friends.\n"
-                "3. He likes other girls' photos online.")
-    elif category == "2":
-        return ("Choose a scenario:\n"
-                "1. My friend jokes about my insecurities.\n"
-                "2. I feel left out in group settings.")
-    elif category == "3":
-        return ("Choose a scenario:\n"
-                "1. My family constantly comments on how I look.\n"
-                "2. I feel left out because I'm not allowed on social media.")
-    elif category == "4":
-        return ("Choose a scenario:\n"
-                "1. I'm scared to speak up in groups.\n"
-                "2. I'm afraid to try new things because I might fail.")
-    elif category == "5":
-        return ("Choose a scenario:\n"
-                "1. I don’t like how I look.\n"
-                "2. I compare myself to people online and feel behind.")
-    elif category == "6":
-        return ("Choose a scenario:\n"
-                "1. I feel very anxious and can't calm down.\n"
-                "2. Nothing makes sense anymore.\n"
-                "3. My boyfriend threatened me.\n"
-                "4. He hit me, but said sorry.")
-    else:
-        return "Please enter a valid category number."
+# ------------------------- Assessment Setup ------------------------- #
+assessment_questions = [
+    {
+        "id": 1,
+        "text": "You just got invited to speak briefly at your school or group meeting about a topic you’re passionate about. What’s your first reaction?",
+        "dimension": "Confidence",
+        "options": {"a": 1, "b": 2, "c": 3, "d": 4}
+    },
+    {
+        "id": 2,
+        "text": "Your friend is upset because she feels left out after you spent more time with another group. She brings it up to you. How do you respond?",
+        "dimension": "Empathy",
+        "options": {"a": 1, "b": 2, "c": 3, "d": 4}
+    },
+    {
+        "id": 3,
+        "text": "After a fight with someone close to you, how do you usually reflect on it?",
+        "dimension": "Self-Awareness",
+        "options": {"a": 1, "b": 2, "c": 3, "d": 4}
+    },
+    {
+        "id": 4,
+        "text": "You’re dating someone who often makes jokes at your expense in front of others. How do you respond?",
+        "dimension": "Self-Respect",
+        "options": {"a": 1, "b": 2, "c": 3, "d": 4}
+    },
+    {
+        "id": 5,
+        "text": "A classmate or coworker takes credit for your idea in a group project. What do you do?",
+        "dimension": "Communication",
+        "options": {"a": 1, "b": 2, "c": 3, "d": 4}
+    },
+    {
+        "id": 6,
+        "text": "A friend constantly calls late at night to vent, even when you’ve told them you’re tired or studying. What do you do?",
+        "dimension": "Boundary-Setting",
+        "options": {"a": 1, "b": 2, "c": 3, "d": 4}
+    }
+]
 
-def get_flow_for_scenario(category, scenario):
-    if category == "1" and scenario == "1":
-        return ("That sounds so frustrating. Feeling ignored after a disagreement can really hurt — especially when you're just trying to work things out.\n\nHas this happened more than once?")
-    elif category == "1" and scenario == "2":
-        return ("It makes sense that you're feeling stuck. You shouldn't have to choose between your relationship and your friends.\n\nWhat does he usually say when you want to hang out with others?")
-    elif category == "1" and scenario == "3":
-        return ("It's totally normal to feel insecure when your partner engages with others online. You're not alone in this.\n\nHave you talked to him about how this makes you feel?")
-    elif category == "2" and scenario == "1":
-        return ("When someone laughs off our feelings or calls us 'too sensitive,' it can really hurt.\n\nWhat does your friend usually say that bothers you the most?")
-    elif category == "2" and scenario == "2":
-        return ("Feeling invisible around a close friend is painful.\n\nHas this been happening often or only in certain situations?")
-    # Add more flows here as you expand
-    else:
-        return "Please enter a valid scenario number."
+def get_next_assessment_question(user_id):
+    session = user_sessions[user_id]
+    q_index = session["current_q"]
+    if q_index < len(assessment_questions):
+        q = assessment_questions[q_index]
+        return f"{q['text']}\nA. ...\nB. ...\nC. ...\nD. ..."
+    return None
 
-# WhatsApp webhook
+def handle_assessment_answer(user_id, answer_letter):
+    session = user_sessions[user_id]
+    q_index = session["current_q"]
+    q = assessment_questions[q_index]
+    score = q["options"].get(answer_letter.lower(), 0)
+    session["answers"].append({"dimension": q["dimension"], "score": score})
+    session["current_q"] += 1
+
+def calculate_trait_scores(answers):
+    scores = {}
+    for a in answers:
+        scores[a["dimension"]] = scores.get(a["dimension"], 0) + a["score"]
+    return scores
+
+def assign_identity(scores):
+    top_two = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:2]
+    combo = frozenset([t[0] for t in top_two])
+    identity_map = {
+        frozenset(["Confidence", "Communication"]): "The Empowered Queen",
+        frozenset(["Self-Awareness", "Empathy"]): "The Healer Oracle",
+        frozenset(["Boundary-Setting", "Self-Respect"]): "The Guardian Queen",
+    }
+    return identity_map.get(combo, "The Growth Explorer")
+
+def generate_feedback(scores, identity):
+    bars = "\n".join([f"{trait}: {int(score * 25)}%" for trait, score in scores.items()])
+    weakest_trait = min(scores, key=scores.get)
+    return (
+        f"🌟 Your AllyAI Identity: *{identity}*\n\n"
+        f"Here’s your growth profile:\n{bars}\n\n"
+        f"You’re strongest in {max(scores, key=scores.get)}.\n"
+        f"But we’ll also work on your {weakest_trait} — because that’s how you become unstoppable 💫"
+    )
+
 @app.route("/bot", methods=["POST"])
 def bot():
     incoming_msg = request.values.get('Body', '').strip().lower()
@@ -59,53 +94,51 @@ def bot():
     response = MessagingResponse()
     msg = response.message()
 
-    # Track user session
-    if from_number not in user_state:
-        user_state[from_number] = {"stage": "greeting"}
-
-    state = user_state[from_number]
-
-    # Step 1: Greet user and show categories
-    if state["stage"] == "greeting":
-        msg.body("Hi, I'm Ally 👋\nI'm here to support you.\n\nWhat do you want to talk about today?\n\n"
-                 "1. Romantic Partner Issues\n"
-                 "2. Friendship Challenges\n"
-                 "3. Family Tensions\n"
-                 "4. Building Self-Confidence\n"
-                 "5. Overcoming Insecurity\n"
-                 "6. Urgent Advice\n\nPlease reply with the number.")
-        state["stage"] = "category"
-        return str(response)
-
-    # Step 2: Handle category selection
-    elif state["stage"] == "category":
-        if incoming_msg in ["1", "2", "3", "4", "5", "6"]:
-            state["category"] = incoming_msg
-            state["stage"] = "scenario"
-            msg.body(get_scenarios_for_category(incoming_msg))
-        else:
-            msg.body("Please enter a number from 1 to 6 to choose a category.")
-        return str(response)
-
-    # Step 3: Handle scenario selection
-    elif state["stage"] == "scenario":
-        category = state["category"]
-        scenario = incoming_msg
-        flow = get_flow_for_scenario(category, scenario)
-        if "Please enter a valid" in flow:
-            msg.body(flow)
-        else:
-            msg.body(flow)
-            state["stage"] = "completed"
-        return str(response)
-
-    # Optional reset
-    elif incoming_msg == "restart":
-        user_state[from_number] = {"stage": "greeting"}
+    if incoming_msg == "restart":
+        user_state[from_number] = {"stage": "intro"}
         msg.body("Let's start over. 👋")
         return str(response)
 
-    else:
-        msg.body("If you'd like to start again, type 'restart'.")
+    if from_number not in user_state:
+        user_state[from_number] = {"stage": "intro"}
+
+    state = user_state[from_number]
+
+    if incoming_msg == "start assessment":
+        user_sessions[from_number] = {"current_q": 0, "answers": []}
+        first_q = get_next_assessment_question(from_number)
+        msg.body("Let’s begin! ✨\n\n" + first_q)
         return str(response)
 
+    if from_number in user_sessions:
+        handle_assessment_answer(from_number, incoming_msg)
+        next_q = get_next_assessment_question(from_number)
+        if next_q:
+            msg.body(next_q)
+        else:
+            scores = calculate_trait_scores(user_sessions[from_number]["answers"])
+            identity = assign_identity(scores)
+            feedback = generate_feedback(scores, identity)
+            del user_sessions[from_number]
+            msg.body(feedback)
+        return str(response)
+
+    if state["stage"] == "intro":
+        msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWould you like to:\n1. Ask me a question\n2. Take a quick assessment to learn more about yourself\n\nReply with 1 or 2.")
+        state["stage"] = "choose_path"
+        return str(response)
+
+    if state["stage"] == "choose_path":
+        if incoming_msg == "1":
+            msg.body("Great! What’s on your mind? Type your question.")
+            state["stage"] = "greeting"
+        elif incoming_msg == "2":
+            user_sessions[from_number] = {"current_q": 0, "answers": []}
+            first_q = get_next_assessment_question(from_number)
+            msg.body("Let’s begin! ✨\n\n" + first_q)
+        else:
+            msg.body("Please reply with 1 or 2 to choose.")
+        return str(response)
+
+    msg.body("If you'd like to start again, type 'restart'.")
+    return str(response)
