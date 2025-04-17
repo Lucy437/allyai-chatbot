@@ -2,3 +2,4 @@ flask
 twilio
 openai
 gunicorn
+flask_cors
