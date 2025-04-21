@@ -6,7 +6,26 @@ app = Flask(__name__)
 CORS(app)
 user_state = {}  # Tracks where each user is in the conversation
 user_sessions = {}  # Tracks assessment sessions
+user_profiles = {}  # Tracks names and states for flow
 
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# ------------------------- AllyAI System Prompt ------------------------- #
+ALLYAI_SYSTEM_PROMPT = """
+You are AllyAI — a warm, emotionally intelligent AI coach designed to support girls aged 15–25 navigating challenges in romantic relationships, friendships, family dynamics, confidence, and mental health.
+
+Your tone should be kind, supportive, non-judgmental, and emotionally validating — like a wise older sister or therapist-coach hybrid. Use simple, safe, and relatable language. Your role is to make the user feel seen, heard, and gently empowered.
+
+Always follow this 5-step AllyAI flow in your responses:
+
+1. Emotional Validation — Acknowledge and name the emotion behind the user’s message.
+2. Gentle Exploration — Ask a short follow-up question to help the user reflect. Offer 3–4 tapable choices plus one open option.
+3. Psychoeducation — Share a short insight using psychological principles (e.g. boundaries, anxious attachment).
+4. Empowerment & Reframe — Affirm their worth and agency.
+5. Optional Support — Offer help crafting a message, calming down, or practicing a boundary.
+
+Prioritize emotional safety and use a tone that is soft, clear, and empowering.
+"""
 # ------------------------- Assessment Setup ------------------------- #
 assessment_questions = [
     {
@@ -180,48 +199,82 @@ def bot():
             msg.body("Please reply with 1 or 2 to choose.")
         return str(response)
 
-# Lovable API endpoint
-@app.route("/allyai", methods=["POST"])
-def allyai():
-    data = request.json
-    user_id = data.get("user_id")
-    message = data.get("message", "").strip().lower()
+    if state["stage"] == "choose_scenario":
+    category = user_profiles[from_number].get("category")
+    
+    scenario_map = {
+        "Romantic Partner Issues": [
+            "He ghosts me every time we argue.",
+            "I have to ask permission to see friends.",
+            "He likes other girls’ photos and it makes me insecure.",
+            "I feel nervous saying no to him."
+        ],
+        "Friendship Challenges": [
+            "My friend makes fun of me in front of others.",
+            "She ignores me in group settings.",
+            "She tells others my secrets.",
+            "I’m always the one initiating."
+        ],
+        "Family Tensions": [
+            "My family criticizes how I look.",
+            "They compare me to cousins and say I’m not enough.",
+            "They don’t support my career dreams.",
+            "They don’t let me have social media."
+        ],
+        "Building Self-Confidence": [
+            "I freeze in large groups.",
+            "I’m scared to try new things.",
+            "Everyone seems more confident than me.",
+            "I want to say no, but I’m afraid."
+        ],
+        "Overcoming Insecurity": [
+            "I compare myself constantly.",
+            "I don’t like the way I look.",
+            "I overthink everything.",
+            "I feel like I’m not enough."
+        ],
+        "Urgent Advice": [
+            "My boyfriend said he’ll hurt himself if I leave.",
+            "I feel anxious and frozen.",
+            "I think I made a huge mistake.",
+            "My boyfriend hit me but apologized."
+        ]
+    }
 
-    if user_id not in user_state:
-        user_state[user_id] = {"stage": "intro"}
+    try:
+        selected_index = int(incoming_msg) - 1
+        scenario = scenario_map[category][selected_index]
+        user_profiles[from_number]["scenario"] = scenario
+        user_state[from_number]["stage"] = "chat_mode"
 
-    state = user_state[user_id]
+        # Prepare and send the ChatGPT prompt
+        custom_prompt = f"""
+{ALLYAI_SYSTEM_PROMPT}
 
-    if message == "start assessment":
-        user_sessions[user_id] = {"current_q": 0, "answers": []}
-        first_q = get_next_assessment_question(user_id)
-        return jsonify({"reply": "Let’s begin! ✨\n\n" + first_q})
+User category: {category}
+User scenario: {scenario}
 
-    if user_id in user_sessions:
-        handle_assessment_answer(user_id, message)
-        next_q = get_next_assessment_question(user_id)
-        if next_q:
-            return jsonify({"reply": next_q})
-        else:
-            scores = calculate_trait_scores(user_sessions[user_id]["answers"])
-            identity = assign_identity(scores)
-            feedback = generate_feedback(scores, identity)
-            del user_sessions[user_id]
-            return jsonify({"reply": feedback})
+Now continue the AllyAI coaching conversation using the 5-step structure.
+Start by validating the user's feelings and asking a gentle follow-up.
+"""
 
-    if state["stage"] == "intro":
-        state["stage"] = "choose_path"
-        return jsonify({"reply": "Hi, I'm Ally 👋\nWould you like to:\n1. Ask a question\n2. Take a quick assessment?"})
+        messages = [
+            {"role": "system", "content": custom_prompt},
+            {"role": "user", "content": f"This is what I'm going through: {scenario}"}
+        ]
 
-    if state["stage"] == "choose_path":
-        if message == "1":
-            state["stage"] = "greeting"
-            return jsonify({"reply": "Great! What's your question?"})
-        elif message == "2":
-            user_sessions[user_id] = {"current_q": 0, "answers": []}
-            first_q = get_next_assessment_question(user_id)
-            return jsonify({"reply": "Let’s begin! ✨\n\n" + first_q})
-        else:
-            return jsonify({"reply": "Please reply with 1 or 2 to choose."})
+        completion = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=500
+        )
+        reply = completion.choices[0].message['content'].strip()
+        msg.body(reply)
 
-    return jsonify({"reply": "If you'd like to start again, type 'restart'."})
+    except Exception as e:
+        print("Error in choose_scenario block:", e)
+        msg.body("Something went wrong. Please reply with a valid number.")
+    
+    return str(response)
+
