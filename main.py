@@ -200,81 +200,81 @@ def bot():
         return str(response)
 
     if state["stage"] == "choose_scenario":
-    category = user_profiles[from_number].get("category")
+        category = user_profiles[from_number].get("category")
+        
+        scenario_map = {
+            "Romantic Partner Issues": [
+                "He ghosts me every time we argue.",
+                "I have to ask permission to see friends.",
+                "He likes other girls’ photos and it makes me insecure.",
+                "I feel nervous saying no to him."
+            ],
+            "Friendship Challenges": [
+                "My friend makes fun of me in front of others.",
+                "She ignores me in group settings.",
+                "She tells others my secrets.",
+                "I’m always the one initiating."
+            ],
+            "Family Tensions": [
+                "My family criticizes how I look.",
+                "They compare me to cousins and say I’m not enough.",
+                "They don’t support my career dreams.",
+                "They don’t let me have social media."
+            ],
+            "Building Self-Confidence": [
+                "I freeze in large groups.",
+                "I’m scared to try new things.",
+                "Everyone seems more confident than me.",
+                "I want to say no, but I’m afraid."
+            ],
+            "Overcoming Insecurity": [
+                "I compare myself constantly.",
+                "I don’t like the way I look.",
+                "I overthink everything.",
+                "I feel like I’m not enough."
+            ],
+            "Urgent Advice": [
+                "My boyfriend said he’ll hurt himself if I leave.",
+                "I feel anxious and frozen.",
+                "I think I made a huge mistake.",
+                "My boyfriend hit me but apologized."
+            ]
+        }
     
-    scenario_map = {
-        "Romantic Partner Issues": [
-            "He ghosts me every time we argue.",
-            "I have to ask permission to see friends.",
-            "He likes other girls’ photos and it makes me insecure.",
-            "I feel nervous saying no to him."
-        ],
-        "Friendship Challenges": [
-            "My friend makes fun of me in front of others.",
-            "She ignores me in group settings.",
-            "She tells others my secrets.",
-            "I’m always the one initiating."
-        ],
-        "Family Tensions": [
-            "My family criticizes how I look.",
-            "They compare me to cousins and say I’m not enough.",
-            "They don’t support my career dreams.",
-            "They don’t let me have social media."
-        ],
-        "Building Self-Confidence": [
-            "I freeze in large groups.",
-            "I’m scared to try new things.",
-            "Everyone seems more confident than me.",
-            "I want to say no, but I’m afraid."
-        ],
-        "Overcoming Insecurity": [
-            "I compare myself constantly.",
-            "I don’t like the way I look.",
-            "I overthink everything.",
-            "I feel like I’m not enough."
-        ],
-        "Urgent Advice": [
-            "My boyfriend said he’ll hurt himself if I leave.",
-            "I feel anxious and frozen.",
-            "I think I made a huge mistake.",
-            "My boyfriend hit me but apologized."
-        ]
-    }
-
-    try:
-        selected_index = int(incoming_msg) - 1
-        scenario = scenario_map[category][selected_index]
-        user_profiles[from_number]["scenario"] = scenario
-        user_state[from_number]["stage"] = "chat_mode"
-
-        # Prepare and send the ChatGPT prompt
-        custom_prompt = f"""
-{ALLYAI_SYSTEM_PROMPT}
-
-User category: {category}
-User scenario: {scenario}
-
-Now continue the AllyAI coaching conversation using the 5-step structure.
-Start by validating the user's feelings and asking a gentle follow-up.
-"""
-
-        messages = [
-            {"role": "system", "content": custom_prompt},
-            {"role": "user", "content": f"This is what I'm going through: {scenario}"}
-        ]
-
-        completion = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=messages,
-            temperature=0.7,
-            max_tokens=500
-        )
-        reply = completion.choices[0].message['content'].strip()
-        msg.body(reply)
-
-    except Exception as e:
-        print("Error in choose_scenario block:", e)
-        msg.body("Something went wrong. Please reply with a valid number.")
+        try:
+            selected_index = int(incoming_msg) - 1
+            scenario = scenario_map[category][selected_index]
+            user_profiles[from_number]["scenario"] = scenario
+            user_state[from_number]["stage"] = "chat_mode"
     
-    return str(response)
-
+            # Prepare and send the ChatGPT prompt
+            custom_prompt = f"""
+    {ALLYAI_SYSTEM_PROMPT}
+    
+    User category: {category}
+    User scenario: {scenario}
+    
+    Now continue the AllyAI coaching conversation using the 5-step structure.
+    Start by validating the user's feelings and asking a gentle follow-up.
+    """
+    
+            messages = [
+                {"role": "system", "content": custom_prompt},
+                {"role": "user", "content": f"This is what I'm going through: {scenario}"}
+            ]
+    
+            completion = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=messages,
+                temperature=0.7,
+                max_tokens=500
+            )
+            reply = completion.choices[0].message['content'].strip()
+            msg.body(reply)
+    
+        except Exception as e:
+            print("Error in choose_scenario block:", e)
+            msg.body("Something went wrong. Please reply with a valid number.")
+        
+        return str(response)
+    
