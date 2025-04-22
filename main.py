@@ -221,10 +221,10 @@ def bot():
             msg.body("Please reply with 1 or 2 to choose.")
         return str(response)
 
-  if state["stage"] == "choose_scenario":
-    category = user_profiles[from_number].get("category")
+    if state["stage"] == "choose_scenario":
+       category = user_profiles[from_number].get("category")
 
-    scenario_map = {
+       scenario_map = {
         "Romantic Partner Issues": [
             "He ghosts me every time we argue.",
             "I have to ask permission to see friends.",
@@ -263,7 +263,7 @@ def bot():
         ]
     }
 
-    try:
+       try:
         selected_index = int(incoming_msg) - 1
         scenario = scenario_map[category][selected_index]
         user_profiles[from_number]["scenario"] = scenario
@@ -279,8 +279,8 @@ def bot():
 
         msg.body(first_step["bot"] + options_text)
 
-    except Exception as e:
+       except Exception as e:
         print("Error in choose_scenario block:", e)
         msg.body("Something went wrong. Please reply with a valid number.")
 
-    return str(response)
+       return str(response)
