@@ -289,119 +289,119 @@ def bot():
             msg.body("Please reply with a valid number (1–6) to choose a category.")
         return str(response)
 
-if state["stage"] == "choose_scenario":
-    category = user_profiles[from_number].get("category")
-
-    scenario_map = {
-        "Romantic Partner Issues": [
-            "He ghosts me every time we argue.",
-            "I have to ask permission to see friends.",
-            "He likes other girls’ photos and it makes me insecure.",
-            "I feel nervous saying no to him."
-        ],
-        "Friendship Challenges": [
-            "My friend makes fun of me in front of others.",
-            "She ignores me in group settings.",
-            "She tells others my secrets.",
-            "I’m always the one initiating."
-        ],
-        "Family Tensions": [
-            "My family criticizes how I look.",
-            "They compare me to cousins and say I’m not enough.",
-            "They don’t support my career dreams.",
-            "They don’t let me have social media."
-        ],
-        "Building Self-Confidence": [
-            "I freeze in large groups.",
-            "I’m scared to try new things.",
-            "Everyone seems more confident than me.",
-            "I want to say no, but I’m afraid."
-        ],
-        "Overcoming Insecurity": [
-            "I compare myself constantly.",
-            "I don’t like the way I look.",
-            "I overthink everything.",
-            "I feel like I’m not enough."
-        ],
-        "Urgent Advice": [
-            "My boyfriend said he’ll hurt himself if I leave.",
-            "I feel anxious and frozen.",
-            "I think I made a huge mistake.",
-            "My boyfriend hit me but apologized."
-        ]
-    }
-
-    try:
-        selected_index = int(incoming_msg) - 1
-        scenario = scenario_map[category][selected_index]
-        user_profiles[from_number]["scenario"] = scenario
-        user_state[from_number]["stage"] = "chat_mode"
-        user_state[from_number]["step_index"] = 0
-
-        steps = get_scenario_script(category, scenario)
-        first_step = steps[0]
-
-        options_text = ""
-        if "options" in first_step:
-            options_text = "\n\n" + "\n".join([f"- {opt}" for opt in first_step["options"]])
-
-        msg.body(first_step["bot"] + options_text)
-
-    except Exception as e:
-        print("Error in choose_scenario block:", e)
-        msg.body("Something went wrong. Please reply with a valid number.")
-
-    return str(response)
-
-# 👇 Add structured scenario flow
-if state["stage"] == "chat_mode":
-    steps = get_scenario_script(
-        user_profiles[from_number]["category"],
-        user_profiles[from_number]["scenario"]
-    )
-
-    index = state.get("step_index", 0)
-
-    if index < len(steps):
-        step = steps[index]
-        state["step_index"] += 1
-
-        options_text = ""
-        if "options" in step:
-            options_text = "\n\n" + "\n".join([f"- {opt}" for opt in step["options"]])
-
-        msg.body(step["bot"] + options_text)
-
-        if index + 1 == len(steps):
-            state["stage"] = "gpt_mode"
-            msg.body("💬 Want to keep chatting about this? Type 'chat' or ask me anything.")
-    else:
-        msg.body("We’ve reached the end of this scenario. 💛 Want to keep talking? Type ‘chat’ or reply ‘menu’ to start over.")
-        state["stage"] = "gpt_mode"
-
-    return str(response)
-
-# 👇 Add GPT fallback mode
-if state["stage"] == "gpt_mode":
-    user_input = request.values.get('Body', '').strip()
-    scenario = user_profiles[from_number].get("scenario", "a relationship or self-worth issue")
-
-    prompt = f"{ALLYAI_SYSTEM_PROMPT}\n\nThe user initially described this scenario: {scenario}\nNow they said: {user_input}\nContinue the AllyAI coaching conversation using the 5-step structure."
-
-    try:
-        completion = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
-                {"role": "user", "content": prompt}
+    if state["stage"] == "choose_scenario":
+        category = user_profiles[from_number].get("category")
+    
+        scenario_map = {
+            "Romantic Partner Issues": [
+                "He ghosts me every time we argue.",
+                "I have to ask permission to see friends.",
+                "He likes other girls’ photos and it makes me insecure.",
+                "I feel nervous saying no to him."
             ],
-            temperature=0.7
+            "Friendship Challenges": [
+                "My friend makes fun of me in front of others.",
+                "She ignores me in group settings.",
+                "She tells others my secrets.",
+                "I’m always the one initiating."
+            ],
+            "Family Tensions": [
+                "My family criticizes how I look.",
+                "They compare me to cousins and say I’m not enough.",
+                "They don’t support my career dreams.",
+                "They don’t let me have social media."
+            ],
+            "Building Self-Confidence": [
+                "I freeze in large groups.",
+                "I’m scared to try new things.",
+                "Everyone seems more confident than me.",
+                "I want to say no, but I’m afraid."
+            ],
+            "Overcoming Insecurity": [
+                "I compare myself constantly.",
+                "I don’t like the way I look.",
+                "I overthink everything.",
+                "I feel like I’m not enough."
+            ],
+            "Urgent Advice": [
+                "My boyfriend said he’ll hurt himself if I leave.",
+                "I feel anxious and frozen.",
+                "I think I made a huge mistake.",
+                "My boyfriend hit me but apologized."
+            ]
+        }
+    
+        try:
+            selected_index = int(incoming_msg) - 1
+            scenario = scenario_map[category][selected_index]
+            user_profiles[from_number]["scenario"] = scenario
+            user_state[from_number]["stage"] = "chat_mode"
+            user_state[from_number]["step_index"] = 0
+    
+            steps = get_scenario_script(category, scenario)
+            first_step = steps[0]
+    
+            options_text = ""
+            if "options" in first_step:
+                options_text = "\n\n" + "\n".join([f"- {opt}" for opt in first_step["options"]])
+    
+            msg.body(first_step["bot"] + options_text)
+    
+        except Exception as e:
+            print("Error in choose_scenario block:", e)
+            msg.body("Something went wrong. Please reply with a valid number.")
+    
+        return str(response)
+    
+    # 👇 Add structured scenario flow
+    if state["stage"] == "chat_mode":
+        steps = get_scenario_script(
+            user_profiles[from_number]["category"],
+            user_profiles[from_number]["scenario"]
         )
-        reply = completion.choices[0].message['content'].strip()
-        msg.body(reply)
-    except Exception as e:
-        print("Error in GPT fallback:", e)
-        msg.body("Oops, something went wrong. Want to start over? Type 'menu'.")
-
-    return str(response)
+    
+        index = state.get("step_index", 0)
+    
+        if index < len(steps):
+            step = steps[index]
+            state["step_index"] += 1
+    
+            options_text = ""
+            if "options" in step:
+                options_text = "\n\n" + "\n".join([f"- {opt}" for opt in step["options"]])
+    
+            msg.body(step["bot"] + options_text)
+    
+            if index + 1 == len(steps):
+                state["stage"] = "gpt_mode"
+                msg.body("💬 Want to keep chatting about this? Type 'chat' or ask me anything.")
+        else:
+            msg.body("We’ve reached the end of this scenario. 💛 Want to keep talking? Type ‘chat’ or reply ‘menu’ to start over.")
+            state["stage"] = "gpt_mode"
+    
+        return str(response)
+    
+    # 👇 Add GPT fallback mode
+    if state["stage"] == "gpt_mode":
+        user_input = request.values.get('Body', '').strip()
+        scenario = user_profiles[from_number].get("scenario", "a relationship or self-worth issue")
+    
+        prompt = f"{ALLYAI_SYSTEM_PROMPT}\n\nThe user initially described this scenario: {scenario}\nNow they said: {user_input}\nContinue the AllyAI coaching conversation using the 5-step structure."
+    
+        try:
+            completion = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7
+            )
+            reply = completion.choices[0].message['content'].strip()
+            msg.body(reply)
+        except Exception as e:
+            print("Error in GPT fallback:", e)
+            msg.body("Oops, something went wrong. Want to start over? Type 'menu'.")
+    
+        return str(response)
 
