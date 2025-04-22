@@ -3,6 +3,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 from flask_cors import CORS
 import openai
 import os
+import json 
 # Load all scenario scripts from JSON
 with open("scenarios.json", "r", encoding="utf-8") as f:
     SCENARIOS = json.load(f)
