@@ -3,10 +3,30 @@ from twilio.twiml.messaging_response import MessagingResponse
 from flask_cors import CORS
 import openai
 import os
+# Load all scenario scripts from JSON
+with open("scenarios.json", "r", encoding="utf-8") as f:
+    SCENARIOS = json.load(f)
 
 app = Flask(__name__)
 CORS(app)
 user_state = {}  # Tracks where each user is in the conversation
+def get_scenario_script(category, scenario_text):
+    for entry in SCENARIOS:
+        if entry["category"] == category and scenario_text.strip().lower() in entry["scenario"].lower():
+            return entry["steps"]
+    return None
+
+def get_next_step(user_id):
+    state = user_state[user_id]
+    script = get_scenario_script(state["category"], state["scenario"])
+    index = state.get("step_index", 0)
+
+    if index < len(script):
+        step = script[index]
+        user_state[user_id]["step_index"] += 1  # Move to next step
+        return step
+    else:
+        return {"type": "end", "bot": "That’s all for now. If you want to talk about something else, just say 'menu' 💬"}
 user_sessions = {}  # Tracks assessment sessions
 user_profiles = {}  # Tracks names and states for flow
 
@@ -201,82 +221,66 @@ def bot():
             msg.body("Please reply with 1 or 2 to choose.")
         return str(response)
 
-    if state["stage"] == "choose_scenario":
-        category = user_profiles[from_number].get("category")
-        
-        scenario_map = {
-            "Romantic Partner Issues": [
-                "He ghosts me every time we argue.",
-                "I have to ask permission to see friends.",
-                "He likes other girls’ photos and it makes me insecure.",
-                "I feel nervous saying no to him."
-            ],
-            "Friendship Challenges": [
-                "My friend makes fun of me in front of others.",
-                "She ignores me in group settings.",
-                "She tells others my secrets.",
-                "I’m always the one initiating."
-            ],
-            "Family Tensions": [
-                "My family criticizes how I look.",
-                "They compare me to cousins and say I’m not enough.",
-                "They don’t support my career dreams.",
-                "They don’t let me have social media."
-            ],
-            "Building Self-Confidence": [
-                "I freeze in large groups.",
-                "I’m scared to try new things.",
-                "Everyone seems more confident than me.",
-                "I want to say no, but I’m afraid."
-            ],
-            "Overcoming Insecurity": [
-                "I compare myself constantly.",
-                "I don’t like the way I look.",
-                "I overthink everything.",
-                "I feel like I’m not enough."
-            ],
-            "Urgent Advice": [
-                "My boyfriend said he’ll hurt himself if I leave.",
-                "I feel anxious and frozen.",
-                "I think I made a huge mistake.",
-                "My boyfriend hit me but apologized."
-            ]
-        }
-    
-        try:
-            selected_index = int(incoming_msg) - 1
-            scenario = scenario_map[category][selected_index]
-            user_profiles[from_number]["scenario"] = scenario
-            user_state[from_number]["stage"] = "chat_mode"
-    
-            # Prepare and send the ChatGPT prompt
-            custom_prompt = f"""
-    {ALLYAI_SYSTEM_PROMPT}
-    
-    User category: {category}
-    User scenario: {scenario}
-    
-    Now continue the AllyAI coaching conversation using the 5-step structure.
-    Start by validating the user's feelings and asking a gentle follow-up.
-    """
-    
-            messages = [
-                {"role": "system", "content": custom_prompt},
-                {"role": "user", "content": f"This is what I'm going through: {scenario}"}
-            ]
-    
-            completion = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=messages,
-                temperature=0.7,
-                max_tokens=500
-            )
-            reply = completion.choices[0].message['content'].strip()
-            msg.body(reply)
-    
-        except Exception as e:
-            print("Error in choose_scenario block:", e)
-            msg.body("Something went wrong. Please reply with a valid number.")
-        
-        return str(response)
-    
+  if state["stage"] == "choose_scenario":
+    category = user_profiles[from_number].get("category")
+
+    scenario_map = {
+        "Romantic Partner Issues": [
+            "He ghosts me every time we argue.",
+            "I have to ask permission to see friends.",
+            "He likes other girls’ photos and it makes me insecure.",
+            "I feel nervous saying no to him."
+        ],
+        "Friendship Challenges": [
+            "My friend makes fun of me in front of others.",
+            "She ignores me in group settings.",
+            "She tells others my secrets.",
+            "I’m always the one initiating."
+        ],
+        "Family Tensions": [
+            "My family criticizes how I look.",
+            "They compare me to cousins and say I’m not enough.",
+            "They don’t support my career dreams.",
+            "They don’t let me have social media."
+        ],
+        "Building Self-Confidence": [
+            "I freeze in large groups.",
+            "I’m scared to try new things.",
+            "Everyone seems more confident than me.",
+            "I want to say no, but I’m afraid."
+        ],
+        "Overcoming Insecurity": [
+            "I compare myself constantly.",
+            "I don’t like the way I look.",
+            "I overthink everything.",
+            "I feel like I’m not enough."
+        ],
+        "Urgent Advice": [
+            "My boyfriend said he’ll hurt himself if I leave.",
+            "I feel anxious and frozen.",
+            "I think I made a huge mistake.",
+            "My boyfriend hit me but apologized."
+        ]
+    }
+
+    try:
+        selected_index = int(incoming_msg) - 1
+        scenario = scenario_map[category][selected_index]
+        user_profiles[from_number]["scenario"] = scenario
+        user_state[from_number]["stage"] = "chat_mode"
+        user_state[from_number]["step_index"] = 0
+
+        steps = get_scenario_script(category, scenario)
+        first_step = steps[0]
+
+        options_text = ""
+        if "options" in first_step:
+            options_text = "\n\n" + "\n".join([f"- {opt}" for opt in first_step["options"]])
+
+        msg.body(first_step["bot"] + options_text)
+
+    except Exception as e:
+        print("Error in choose_scenario block:", e)
+        msg.body("Something went wrong. Please reply with a valid number.")
+
+    return str(response)
