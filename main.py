@@ -239,55 +239,55 @@ def bot():
             "6": "Urgent Advice"
         }
         selected = category_map.get(incoming_msg.strip())
-    if selected:
-        user_profiles[from_number]["category"] = selected
-        state["stage"] = "choose_scenario"
-
-        scenario_map = {
-            "Romantic Partner Issues": [
-                "He ghosts me every time we argue.",
-                "I have to ask permission to see friends.",
-                "He likes other girls’ photos and it makes me insecure.",
-                "I feel nervous saying no to him."
-            ],
-            "Friendship Challenges": [
-                "My friend makes fun of me in front of others.",
-                "She ignores me in group settings.",
-                "She tells others my secrets.",
-                "I’m always the one initiating."
-            ],
-            "Family Tensions": [
-                "My family criticizes how I look.",
-                "They compare me to cousins and say I’m not enough.",
-                "They don’t support my career dreams.",
-                "They don’t let me have social media."
-            ],
-            "Building Self-Confidence": [
-                "I freeze in large groups.",
-                "I’m scared to try new things.",
-                "Everyone seems more confident than me.",
-                "I want to say no, but I’m afraid."
-            ],
-            "Overcoming Insecurity": [
-                "I compare myself constantly.",
-                "I don’t like the way I look.",
-                "I overthink everything.",
-                "I feel like I’m not enough."
-            ],
-            "Urgent Advice": [
-                "My boyfriend said he’ll hurt himself if I leave.",
-                "I feel anxious and frozen.",
-                "I think I made a huge mistake.",
-                "My boyfriend hit me but apologized."
-            ]
-        }
-
-        options = scenario_map[selected]
-        option_text = "\n".join([f"{i+1}. {s}" for i, s in enumerate(options)])
-        msg.body(f"Thanks! Here are some common situations under *{selected}*:\n\n{option_text}\n\nReply with the number that fits your situation.")
-    else:
-        msg.body("Please reply with a valid number (1–6) to choose a category.")
-    return str(response)
+        if selected:
+            user_profiles[from_number]["category"] = selected
+            state["stage"] = "choose_scenario"
+    
+            scenario_map = {
+                "Romantic Partner Issues": [
+                    "He ghosts me every time we argue.",
+                    "I have to ask permission to see friends.",
+                    "He likes other girls’ photos and it makes me insecure.",
+                    "I feel nervous saying no to him."
+                ],
+                "Friendship Challenges": [
+                    "My friend makes fun of me in front of others.",
+                    "She ignores me in group settings.",
+                    "She tells others my secrets.",
+                    "I’m always the one initiating."
+                ],
+                "Family Tensions": [
+                    "My family criticizes how I look.",
+                    "They compare me to cousins and say I’m not enough.",
+                    "They don’t support my career dreams.",
+                    "They don’t let me have social media."
+                ],
+                "Building Self-Confidence": [
+                    "I freeze in large groups.",
+                    "I’m scared to try new things.",
+                    "Everyone seems more confident than me.",
+                    "I want to say no, but I’m afraid."
+                ],
+                "Overcoming Insecurity": [
+                    "I compare myself constantly.",
+                    "I don’t like the way I look.",
+                    "I overthink everything.",
+                    "I feel like I’m not enough."
+                ],
+                "Urgent Advice": [
+                    "My boyfriend said he’ll hurt himself if I leave.",
+                    "I feel anxious and frozen.",
+                    "I think I made a huge mistake.",
+                    "My boyfriend hit me but apologized."
+                ]
+            }
+    
+            options = scenario_map[selected]
+            option_text = "\n".join([f"{i+1}. {s}" for i, s in enumerate(options)])
+            msg.body(f"Thanks! Here are some common situations under *{selected}*:\n\n{option_text}\n\nReply with the number that fits your situation.")
+        else:
+            msg.body("Please reply with a valid number (1–6) to choose a category.")
+        return str(response)
 
 if state["stage"] == "choose_scenario":
     category = user_profiles[from_number].get("category")
