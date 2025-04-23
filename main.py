@@ -13,8 +13,12 @@ CORS(app)
 user_state = {}  # Tracks where each user is in the conversation
 def get_scenario_script(category, scenario_text):
     for entry in SCENARIOS:
-        if entry["category"] == category and scenario_text.strip().lower() in entry["scenario"].lower():
+        if entry["category"] == category and scenario_text.strip().lower() == entry["scenario"].strip().lower():
             return entry["steps"]
+    
+    # If no match found, print debug info
+    print("[DEBUG] No match found for scenario:", scenario_text)
+    print("[DEBUG] Available scenarios in category:", [entry["scenario"] for entry in SCENARIOS if entry["category"] == category])
     return None
 
 def get_next_step(user_id):
