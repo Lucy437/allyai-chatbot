@@ -232,7 +232,7 @@ def bot():
                 scenario = options[selected_index]
                 user_profiles[from_number]["scenario"] = scenario
                 user_state[from_number]["stage"] = "gpt_mode"
-                msg.body("Got it. Let’s talk about it. 💬 Feel free to tell me what’s been going on.")
+              msg.body("Thanks for sharing that. I’m here for you 💛 Just tell me a bit more about what’s been going on, and we’ll work through it together.")
             elif selected_index == len(options) - 1:
                 user_state[from_number]["stage"] = "gpt_mode_custom"
                 msg.body("No problem — just type out what’s going on and I’ll do my best to help 💬")
