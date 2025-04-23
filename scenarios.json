@@ -1,111 +1,98 @@
 [
   {
     "category": "Romantic Partner Issues",
-    "scenario": "He ghosts me every time we have a disagreement. I always end up apologizing, even when I don\u2019t think I\u2019m wrong.",
-    "steps": [
-      {
-        "type": "intro",
-        "bot": "Hey, I\u2019m here for you. What\u2019s on your mind?"
-      },
-      {
-        "type": "context",
-        "bot": "Okay \ud83d\udc9b So here\u2019s the thing: when someone ghosts after conflict, it can be a form of emotional avoidance \u2014 and sometimes even emotional control, even if they don\u2019t mean it that way. And when you always apologize first, it might be a sign of something called anxious attachment \u2014 where love feels tied to keeping the peace at all costs. It\u2019s super common, especially when deep down you\u2019re afraid of abandonment. But here\u2019s what\u2019s true: You deserve a relationship where your needs, voice, and boundaries matter too. Even during conflict."
-      },
-      {
-        "type": "validation",
-        "bot": "That sounds really painful. When someone disappears instead of talking things through, it can leave you feeling really alone and confused. You don\u2019t deserve to carry the weight of every disagreement. Can I ask\u2014how does it feel when that happens?",
-        "options": [
-          "I end up overthinking what I did wrong.",
-          "I feel like I\u2019m walking on eggshells.",
-          "He says he just needs space.",
-          "(Type your own...)"
-        ]
-      },
-      {
-        "type": "reflection",
-        "user_choice": "I don\u2019t want to lose him.",
-        "bot": "That really hits deep. It sounds like staying connected\u2014even at the cost of your own truth\u2014feels safer than the idea of losing him. That\u2019s such a human thing to do, especially when we care so much. But can I tell you something gently? When we constantly silence ourselves to keep someone, we slowly start losing ourselves instead. \ud83d\udc94 Would it be okay if I shared a little insight about what might be going on underneath this pattern?",
-        "options": [
-          "Yes, please.",
-          "I\u2019m not sure.",
-          "Not right now."
-        ]
-      },
-      {
-        "type": "offer_support",
-        "user_choice": "Yes, please.",
-        "bot": "Would you like help putting your thoughts into a message that feels clear but not confrontational?",
-        "options": [
-          "Yes, that would help a lot.",
-          "Maybe\u2026 can I see an example first?",
-          "No, I\u2019m not ready to send anything.",
-          "(Type your own...)"
-        ]
-      },
-      {
-        "type": "sample_message",
-        "user_choice": "Yes, that would help a lot.",
-        "bot": "I got you \ud83e\udd1d Let\u2019s craft something that\u2019s honest, calm, and clear \u2014 something that lets you express how you feel without starting a fight. Here\u2019s one way to say it:\n\n\u201cHey, I care about us and wanted to be honest. When we have a disagreement and you disappear, I feel really hurt and unsure of where we stand. I find myself apologizing just to reconnect, even when I\u2019m not sure I did anything wrong. I\u2019d really appreciate if we could talk things through, even when it\u2019s hard \u2014 that would help me feel safer and more respected in this relationship.\u201d\n\n\ud83d\udcac You can:\n\u270f\ufe0f Edit this to make it feel more you\n\ud83d\udca1 Ask for a different tone (softer or more assertive)\n\ud83d\udcbe Save it for later\n\nWas this helpful?",
-        "options": [
-          "Yes",
-          "No"
-        ]
-      }
-    ]
+    "scenario": "He ghosts me every time we have a disagreement. I always end up apologizing, even when I don’t think I’m wrong."
+  },
+  {
+    "category": "Romantic Partner Issues",
+    "scenario": "I have to ask permission to see friends."
+  },
+  {
+    "category": "Romantic Partner Issues",
+    "scenario": "He likes other girls’ photos and it makes me insecure."
+  },
+  {
+    "category": "Romantic Partner Issues",
+    "scenario": "I feel nervous saying no to him."
   },
   {
     "category": "Friendship Challenges",
-    "scenario": "My friend makes jokes about things I'm insecure about. When I speak up, she says I'm too sensitive.",
-    "steps": [
-      {
-        "type": "intro",
-        "bot": "Hey, I\u2019m here for you. What\u2019s going on with your friend?"
-      },
-      {
-        "type": "context",
-        "bot": "Okay \ud83d\udc9b That kind of situation can really wear you down. When someone makes jokes about things you\u2019re insecure about \u2014 especially someone you care about \u2014 it can blur the line between teasing and harm. And when you speak up and they tell you you\u2019re \u2018too sensitive,\u2019 it can make you question your own feelings. That\u2019s not okay. Your feelings are valid. You deserve friendships where you feel safe, not small."
-      },
-      {
-        "type": "validation",
-        "bot": "That sounds really hurtful. Being mocked about something you're already insecure about can cut deep, especially when it's brushed off as 'just a joke.' Can I ask\u2014what usually happens after she says you're too sensitive?",
-        "options": [
-          "I stay quiet to avoid more drama.",
-          "I try to laugh it off but it hurts.",
-          "I start doubting myself.",
-          "(Type your own...)"
-        ]
-      },
-      {
-        "type": "reflection",
-        "user_choice": "I try to laugh it off but it hurts.",
-        "bot": "That makes total sense. Sometimes it feels easier to pretend it's no big deal than risk a bigger conflict. But just because you don\u2019t show your hurt doesn\u2019t mean it isn\u2019t real. And pretending doesn\u2019t make it go away \u2014 it just pushes it deeper. Can I ask\u2014what do you wish would happen instead when you speak up?",
-        "options": [
-          "I wish she would actually listen.",
-          "I just want her to stop.",
-          "I want to feel respected, not judged.",
-          "I honestly don\u2019t know."
-        ]
-      },
-      {
-        "type": "offer_support",
-        "user_choice": "I wish she would actually listen.",
-        "bot": "That\u2019s a completely reasonable hope. You deserve to be heard and supported by your friends. Would you like help crafting a message that sets a gentle boundary but also shows you care?",
-        "options": [
-          "Yes, that would help a lot.",
-          "Maybe\u2026 can I see an example first?",
-          "No, I\u2019m not ready to say anything.",
-          "(Type your own...)"
-        ]
-      },
-      {
-        "type": "sample_message",
-        "user_choice": "Yes, that would help a lot.",
-        "bot": "Got you \ud83e\udd1d Here's a message you could start with:\n\n\u201cHey, I wanted to share something that\u2019s been bothering me. When you joke about things I\u2019m insecure about, it really hurts \u2014 even if it\u2019s meant to be funny. I know you might not mean it that way, but it makes me feel small. I\u2019d appreciate it if we could be more mindful \u2014 I really value our friendship and want it to feel safe and supportive.\u201d\n\n\ud83d\udcac You can:\n\u270f\ufe0f Tweak it to make it feel more like you\n\ud83d\udca1 Ask for a different tone (more assertive or more gentle)\n\ud83d\udcbe Save it for later\n\nWas this helpful?",
-        "options": [
-          "Yes",
-          "No"
-        ]
-      }
-    ]
+    "scenario": "My friend makes jokes about things I'm insecure about. When I speak up, she says I'm too sensitive."
+  },
+  {
+    "category": "Friendship Challenges",
+    "scenario": "She ignores me in group settings."
+  },
+  {
+    "category": "Friendship Challenges",
+    "scenario": "She tells others my secrets."
+  },
+  {
+    "category": "Friendship Challenges",
+    "scenario": "I’m always the one initiating."
+  },
+  {
+    "category": "Family Tensions",
+    "scenario": "My family criticizes how I look."
+  },
+  {
+    "category": "Family Tensions",
+    "scenario": "They compare me to cousins and say I’m not enough."
+  },
+  {
+    "category": "Family Tensions",
+    "scenario": "They don’t support my career dreams."
+  },
+  {
+    "category": "Family Tensions",
+    "scenario": "They don’t let me have social media."
+  },
+  {
+    "category": "Building Self-Confidence",
+    "scenario": "I freeze in large groups."
+  },
+  {
+    "category": "Building Self-Confidence",
+    "scenario": "I’m scared to try new things."
+  },
+  {
+    "category": "Building Self-Confidence",
+    "scenario": "Everyone seems more confident than me."
+  },
+  {
+    "category": "Building Self-Confidence",
+    "scenario": "I want to say no, but I’m afraid."
+  },
+  {
+    "category": "Overcoming Insecurity",
+    "scenario": "I compare myself constantly."
+  },
+  {
+    "category": "Overcoming Insecurity",
+    "scenario": "I don’t like the way I look."
+  },
+  {
+    "category": "Overcoming Insecurity",
+    "scenario": "I overthink everything."
+  },
+  {
+    "category": "Overcoming Insecurity",
+    "scenario": "I feel like I’m not enough."
+  },
+  {
+    "category": "Urgent Advice",
+    "scenario": "My boyfriend said he’ll hurt himself if I leave."
+  },
+  {
+    "category": "Urgent Advice",
+    "scenario": "I feel anxious and frozen."
+  },
+  {
+    "category": "Urgent Advice",
+    "scenario": "I think I made a huge mistake."
+  },
+  {
+    "category": "Urgent Advice",
+    "scenario": "My boyfriend hit me but apologized."
   }
 ]
