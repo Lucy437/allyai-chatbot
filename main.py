@@ -178,7 +178,7 @@ def bot():
         return str(response)
 
     if from_number not in user_state:
-    user_state[from_number] = {}
+        user_state[from_number] = {}
 
     if "stage" not in user_state[from_number]:
         user_state[from_number]["stage"] = "intro"
