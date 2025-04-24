@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from twilio.twiml.messaging_response import MessagingResponse
 from flask_cors import CORS
 import openai
+from openai import OpenAI
 import os
 import json 
 # Load all scenario scripts from JSON
@@ -16,7 +17,8 @@ user_profiles = {}
 user_sessions = {}
 
 # OpenAI API Key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI()
 
 # ------------------------- AllyAI System Prompt ------------------------- #
 ALLYAI_SYSTEM_PROMPT = """
@@ -172,15 +174,15 @@ def bot():
 
     if incoming_msg.lower() == "test gpt":
         try:
-            completion = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "You are a friendly chatbot."},
-                    {"role": "user", "content": "Say hello in a warm and short way."}
+                    {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt}
                 ],
-                temperature=0.5
+                temperature=0.7
             )
-            reply = completion.choices[0].message["content"].strip()
+            reply = response.choices[0].message.content.strip()
             msg.body(f"✅ GPT works!\n\n{reply}")
         except Exception as e:
             msg.body(f"❌ GPT failed: {str(e)}")
@@ -308,7 +310,7 @@ def bot():
     
 #         try:
 #             completion = openai.ChatCompletion.create(
-#                 model="gpt-4",
+#                 model="",
 #                 messages=[
 #                     {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
 #                     {"role": "user", "content": prompt}
