@@ -169,26 +169,35 @@ def bot():
     from_number = request.values.get("From")
     incoming_msg = request.values.get("Body", "").strip()
 
+    print(f"[DEBUG] Received message from {from_number}: {incoming_msg}")
+
     response = MessagingResponse()
     msg = response.message()
 
     if incoming_msg.lower() == "test gpt":
+        msg.body("🧪 Reached GPT test logic... trying OpenAI now.")
+
         try:
-            response = client.chat.completions.create(
+            from openai import OpenAI
+            client = OpenAI()
+
+            result = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
-                    {"role": "user", "content": "Say hello in a kind and encouraging way."}
+                    {"role": "system", "content": "You are a supportive AI friend."},
+                    {"role": "user", "content": "Say hello in a calm and kind way."}
                 ],
                 temperature=0.7
             )
-            reply = response.choices[0].message.content.strip()
+            reply = result.choices[0].message.content.strip()
+            print("[DEBUG] GPT returned:", reply)
             msg.body(f"✅ GPT works!\n\n{reply}")
         except Exception as e:
-            msg.body(f"❌ GPT failed: {str(e)}")
+            print("[ERROR in GPT test]:", e)
+            msg.body(f"❌ GPT failed:\n{str(e)}")
         return str(response)
 
-    msg.body("Type 'test gpt' to run a GPT check.")
+    msg.body("Type 'test gpt' to check if GPT is working.")
     return str(response)
 
 
