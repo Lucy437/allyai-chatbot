@@ -162,135 +162,163 @@ def generate_feedback(scores, identity):
         f"But we’ll also work on your {weakest_trait} — because that’s how you become unstoppable 💫"
     )
 
-# WhatsApp bot route
 @app.route("/bot", methods=["POST"])
 def bot():
-    incoming_msg = request.values.get('Body', '').strip()
-    from_number = request.values.get('From')
+    from_number = request.values.get("From")
+    incoming_msg = request.values.get("Body", "").strip()
+
     response = MessagingResponse()
     msg = response.message()
 
-    if incoming_msg.lower() == "restart":
-        user_state[from_number] = {"stage": "intro"}
-        msg.body("Let's start over. 👋")
-        return str(response)
-
-    if from_number not in user_state:
-        user_state[from_number] = {"stage": "intro"}
-        msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
-        return str(response)
-
-    state = user_state[from_number]
-
-    if state["stage"] == "intro":
-        user_profiles[from_number] = {"name": incoming_msg.title()}
-        user_state[from_number]["stage"] = "choose_path"
-        msg.body(f"Nice to meet you, {incoming_msg.title()}!\n\nHow can I help you today?\n1. Ask for advice\n2. Take a quick assessment to understand your relationship style")
-        return str(response)
-
-    if state["stage"] == "choose_path":
-        if incoming_msg == "1":
-            user_state[from_number]["stage"] = "choose_category"
-            msg.body("Choose a topic you want to talk about:\n1. Romantic Partner Issues\n2. Friendship Challenges\n3. Family Tensions\n4. Building Self-Confidence\n5. Overcoming Insecurity\n6. Urgent Advice")
-        elif incoming_msg == "2":
-            user_sessions[from_number] = {"current_q": 0, "answers": []}
-            first_q = get_next_assessment_question(from_number)
-            msg.body("Let’s begin! ✨\n\n" + first_q)
-        else:
-            msg.body("Please reply with 1 or 2.")
-        return str(response)
-
-    if state["stage"] == "choose_category":
-        category_map = {
-            "1": "Romantic Partner Issues",
-            "2": "Friendship Challenges",
-            "3": "Family Tensions",
-            "4": "Building Self-Confidence",
-            "5": "Overcoming Insecurity",
-            "6": "Urgent Advice"
-        }
-        selected = category_map.get(incoming_msg)
-        if selected:
-            user_profiles[from_number]["category"] = selected
-            state["stage"] = "choose_scenario"
-
-            options = [s["scenario"] for s in SCENARIOS if s["category"] == selected]
-            options.append("Something else — I want to describe my situation in my own words.")
-
-            user_state[from_number]["scenario_options"] = options
-            option_text = "\n".join([f"{i+1}. {s}" for i, s in enumerate(options)])
-            msg.body(f"Thanks! Here are some common situations under *{selected}*:\n\n{option_text}\n\nReply with the number that fits your situation.")
-        else:
-            msg.body("Please choose a valid number from the list above.")
-        return str(response)
-
-    if state["stage"] == "choose_scenario":
-        options = user_state[from_number].get("scenario_options", [])
-        try:
-            selected_index = int(incoming_msg) - 1
-            if selected_index < len(options) - 1:
-                scenario = options[selected_index]
-                user_profiles[from_number]["scenario"] = scenario
-                user_state[from_number]["stage"] = "gpt_mode"
-                msg.body("Thanks for sharing that. I’m here for you 💛 Just tell me a bit more about what’s been going on, and we’ll work through it together.")
-            elif selected_index == len(options) - 1:
-                user_state[from_number]["stage"] = "gpt_mode_custom"
-                msg.body("No problem — just type out what’s going on and I’ll do my best to help 💬")
-            else:
-                msg.body("Please choose a valid number from the list.")
-        except:
-            msg.body("Please reply with the number of your choice.")
-        return str(response)
-
-    if from_number in user_sessions:
-        handle_assessment_answer(from_number, incoming_msg)
-        next_q = get_next_assessment_question(from_number)
-        if next_q:
-            msg.body(next_q)
-        else:
-            scores = calculate_trait_scores(user_sessions[from_number]["answers"])
-            identity = assign_identity(scores)
-            feedback = generate_feedback(scores, identity)
-            del user_sessions[from_number]
-            msg.body(feedback)
-        return str(response)
-
-    if state["stage"] in ["gpt_mode", "gpt_mode_custom"]:
-        scenario = user_profiles.get(from_number, {}).get("scenario", "").strip()
-        user_input = incoming_msg.strip()
-    
-        if state["stage"] == "gpt_mode_custom":
-            scenario = user_input
-    
-        # 🛡️ NEW fallback if scenario is missing
-        if not scenario:
-            msg.body("Hmm, I didn’t quite catch that. Can you describe what’s going on again?")
-            return str(response)
-    
-        # 🛡️ NEW fallback if user didn’t say anything
-        if not user_input:
-            msg.body("Could you tell me a bit more about what's happening so I can help?")
-            return str(response)
-    
-        prompt = f"""{ALLYAI_SYSTEM_PROMPT}
-    
-    The user described this situation: {scenario}
-    Now they said: {user_input}
-    Continue the AllyAI coaching conversation using the 5-step structure."""
-    
+    if incoming_msg.lower() == "test gpt":
         try:
             completion = openai.ChatCompletion.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt}
+                    {"role": "system", "content": "You are a friendly chatbot."},
+                    {"role": "user", "content": "Say hello in a warm and short way."}
                 ],
-                temperature=0.7
+                temperature=0.5
             )
             reply = completion.choices[0].message["content"].strip()
-            msg.body(reply)
-        except Exception:
-            msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
-    
+            msg.body(f"✅ GPT works!\n\n{reply}")
+        except Exception as e:
+            msg.body(f"❌ GPT failed: {str(e)}")
         return str(response)
+
+    msg.body("Type 'test gpt' to run a GPT check.")
+    return str(response)
+
+
+# # WhatsApp bot route
+# @app.route("/bot", methods=["POST"])
+# def bot():
+#     incoming_msg = request.values.get('Body', '').strip()
+#     from_number = request.values.get('From')
+#     response = MessagingResponse()
+#     msg = response.message()
+
+#     if incoming_msg.lower() == "restart":
+#         user_state[from_number] = {"stage": "intro"}
+#         msg.body("Let's start over. 👋")
+#         return str(response)
+
+#     if from_number not in user_state:
+#         user_state[from_number] = {"stage": "intro"}
+#         msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
+#         return str(response)
+
+#     state = user_state[from_number]
+
+#     if state["stage"] == "intro":
+#         user_profiles[from_number] = {"name": incoming_msg.title()}
+#         user_state[from_number]["stage"] = "choose_path"
+#         msg.body(f"Nice to meet you, {incoming_msg.title()}!\n\nHow can I help you today?\n1. Ask for advice\n2. Take a quick assessment to understand your relationship style")
+#         return str(response)
+
+#     if state["stage"] == "choose_path":
+#         if incoming_msg == "1":
+#             user_state[from_number]["stage"] = "choose_category"
+#             msg.body("Choose a topic you want to talk about:\n1. Romantic Partner Issues\n2. Friendship Challenges\n3. Family Tensions\n4. Building Self-Confidence\n5. Overcoming Insecurity\n6. Urgent Advice")
+#         elif incoming_msg == "2":
+#             user_sessions[from_number] = {"current_q": 0, "answers": []}
+#             first_q = get_next_assessment_question(from_number)
+#             msg.body("Let’s begin! ✨\n\n" + first_q)
+#         else:
+#             msg.body("Please reply with 1 or 2.")
+#         return str(response)
+
+#     if state["stage"] == "choose_category":
+#         category_map = {
+#             "1": "Romantic Partner Issues",
+#             "2": "Friendship Challenges",
+#             "3": "Family Tensions",
+#             "4": "Building Self-Confidence",
+#             "5": "Overcoming Insecurity",
+#             "6": "Urgent Advice"
+#         }
+#         selected = category_map.get(incoming_msg)
+#         if selected:
+#             user_profiles[from_number]["category"] = selected
+#             state["stage"] = "choose_scenario"
+
+#             options = [s["scenario"] for s in SCENARIOS if s["category"] == selected]
+#             options.append("Something else — I want to describe my situation in my own words.")
+
+#             user_state[from_number]["scenario_options"] = options
+#             option_text = "\n".join([f"{i+1}. {s}" for i, s in enumerate(options)])
+#             msg.body(f"Thanks! Here are some common situations under *{selected}*:\n\n{option_text}\n\nReply with the number that fits your situation.")
+#         else:
+#             msg.body("Please choose a valid number from the list above.")
+#         return str(response)
+
+#     if state["stage"] == "choose_scenario":
+#         options = user_state[from_number].get("scenario_options", [])
+#         try:
+#             selected_index = int(incoming_msg) - 1
+#             if selected_index < len(options) - 1:
+#                 scenario = options[selected_index]
+#                 user_profiles[from_number]["scenario"] = scenario
+#                 user_state[from_number]["stage"] = "gpt_mode"
+#                 msg.body("Thanks for sharing that. I’m here for you 💛 Just tell me a bit more about what’s been going on, and we’ll work through it together.")
+#             elif selected_index == len(options) - 1:
+#                 user_state[from_number]["stage"] = "gpt_mode_custom"
+#                 msg.body("No problem — just type out what’s going on and I’ll do my best to help 💬")
+#             else:
+#                 msg.body("Please choose a valid number from the list.")
+#         except:
+#             msg.body("Please reply with the number of your choice.")
+#         return str(response)
+
+#     if from_number in user_sessions:
+#         handle_assessment_answer(from_number, incoming_msg)
+#         next_q = get_next_assessment_question(from_number)
+#         if next_q:
+#             msg.body(next_q)
+#         else:
+#             scores = calculate_trait_scores(user_sessions[from_number]["answers"])
+#             identity = assign_identity(scores)
+#             feedback = generate_feedback(scores, identity)
+#             del user_sessions[from_number]
+#             msg.body(feedback)
+#         return str(response)
+
+#     if state["stage"] in ["gpt_mode", "gpt_mode_custom"]:
+#         scenario = user_profiles.get(from_number, {}).get("scenario", "").strip()
+#         user_input = incoming_msg.strip()
+    
+#         if state["stage"] == "gpt_mode_custom":
+#             scenario = user_input
+    
+#         # 🛡️ NEW fallback if scenario is missing
+#         if not scenario:
+#             msg.body("Hmm, I didn’t quite catch that. Can you describe what’s going on again?")
+#             return str(response)
+    
+#         # 🛡️ NEW fallback if user didn’t say anything
+#         if not user_input:
+#             msg.body("Could you tell me a bit more about what's happening so I can help?")
+#             return str(response)
+    
+#         prompt = f"""{ALLYAI_SYSTEM_PROMPT}
+    
+#     The user described this situation: {scenario}
+#     Now they said: {user_input}
+#     Continue the AllyAI coaching conversation using the 5-step structure."""
+    
+#         try:
+#             completion = openai.ChatCompletion.create(
+#                 model="gpt-4",
+#                 messages=[
+#                     {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
+#                     {"role": "user", "content": prompt}
+#                 ],
+#                 temperature=0.7
+#             )
+#             reply = completion.choices[0].message["content"].strip()
+#             msg.body(reply)
+#         except Exception:
+#             msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
+    
+#         return str(response)
 
