@@ -23,6 +23,27 @@ client = OpenAI()
 # ------------------------- AllyAI System Prompt ------------------------- #
 ALLYAI_SYSTEM_PROMPT = """
 You are AllyAI — a warm, emotionally intelligent AI coach who supports girls aged 15–25 navigating challenges in relationships, self-worth, confidence, and mental health.
+
+You speak like a wise older sister or therapist-coach hybrid. You are emotionally safe, relatable, and empowering.
+
+Use short, human, natural-sounding messages. You are texting — avoid long paragraphs. Be warm, clear, and never robotic.
+
+Always follow this 5-step AllyAI structure:
+
+1. **Emotional Validation** — Acknowledge how the user feels and name the emotion.
+2. **Gentle Exploration** — Ask a short follow-up question. Offer 2–4 simple tap-worthy replies (plus “Type your own…”).
+3. **Psychoeducation** — Briefly explain the concept (like ghosting, boundaries, anxious attachment) in a non-academic, supportive way.
+4. **Empowerment & Reframe** — Affirm the user's worth. Normalize their experience and offer a new perspective.
+5. **Optional Support** — Offer to help write a message, plan next steps, or practice a boundary.
+
+You never give advice like a lecture. You ask questions that help the user come to their own decision.
+
+Your goal is to help the user feel:
+- Seen and supported
+- Gently challenged
+- Ready to make their next move
+
+You never overwhelm — keep it simple and kind.
 """
 # ------------------------- Assessment Setup ------------------------- #
 assessment_questions = [
@@ -157,7 +178,10 @@ def bot():
         return str(response)
 
     if from_number not in user_state:
-        user_state[from_number] = {"stage": "intro"}
+    user_state[from_number] = {}
+
+    if "stage" not in user_state[from_number]:
+        user_state[from_number]["stage"] = "intro"
         msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
         return str(response)
 
@@ -212,14 +236,15 @@ def bot():
             if selected_index < len(options) - 1:
                 scenario = options[selected_index]
                 user_profiles[from_number]["scenario"] = scenario
-                user_state[from_number]["stage"] = "gpt_mode"
+                user_state[from_number]["stage"] = "gpt_mode"  # make sure this sticks!
                 msg.body("Thanks for sharing that. I’m here for you 💛 Just tell me a bit more about what’s been going on, and we’ll work through it together.")
             elif selected_index == len(options) - 1:
                 user_state[from_number]["stage"] = "gpt_mode_custom"
                 msg.body("No problem — just type out what’s going on and I’ll do my best to help 💬")
             else:
                 msg.body("Please choose a valid number from the list.")
-        except:
+        except Exception as e:
+            print("[ERROR in choose_scenario]", str(e))
             msg.body("Please reply with the number of your choice.")
         return str(response)
 
@@ -251,27 +276,28 @@ def bot():
             msg.body("Could you tell me a bit more about what's happening so I can help?")
             return str(response)
     
-        prompt = f"""{ALLYAI_SYSTEM_PROMPT}
-                        The user described this situation: {scenario}
-                        Now they said: {user_input}
-                        Continue the AllyAI coaching conversation using the 5-step structure.
-                        Keep responses short, emotionally warm, and human-sounding — like a wise sister texting back.
-                    """
-    
+        prompt = f"""
+        The user described this situation: {scenario}
+        Now they said: {user_input}
+        Continue the AllyAI coaching conversation using the 5-step structure.
+        Keep responses short, emotionally warm, and human-sounding — like a wise sister texting back.
+        """
+        
         try:
             response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
-                    {"role": "user", "content": "Say hello in a calm and kind way."}
+                    {"role": "user", "content": prompt}
                 ],
                 temperature=0.7
             )
             reply = response.choices[0].message.content.strip()
             msg.body(reply)
-        except Exception:
+        except Exception as e:
+            print("[ERROR in GPT fallback]", str(e))
             msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
-    
+        
         return str(response)
 
 
