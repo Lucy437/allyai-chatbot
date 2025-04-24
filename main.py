@@ -178,7 +178,7 @@ def bot():
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": "Say hello in a kind and encouraging way."}
                 ],
                 temperature=0.7
             )
