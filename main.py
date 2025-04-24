@@ -252,19 +252,18 @@ def bot():
             return str(response)
     
         prompt = f"""{ALLYAI_SYSTEM_PROMPT}
-    
-    The user described this situation: {scenario}
-    Now they said: {user_input}
-    Continue the AllyAI coaching conversation using the 5-step structure.
-    Keep responses short, emotionally warm, and human-sounding — like a wise sister texting back.
-    """
+                        The user described this situation: {scenario}
+                        Now they said: {user_input}
+                        Continue the AllyAI coaching conversation using the 5-step structure.
+                        Keep responses short, emotionally warm, and human-sounding — like a wise sister texting back.
+                    """
     
         try:
             response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": "Say hello in a calm and kind way."}
                 ],
                 temperature=0.7
             )
