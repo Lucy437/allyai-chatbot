@@ -256,14 +256,28 @@ def bot():
         return str(response)
 
     if state["stage"] in ["gpt_mode", "gpt_mode_custom"]:
-        scenario = user_profiles[from_number].get("scenario", "a relationship or self-worth issue")
-        user_input = incoming_msg
-
+        scenario = user_profiles.get(from_number, {}).get("scenario", "").strip()
+        user_input = incoming_msg.strip()
+    
         if state["stage"] == "gpt_mode_custom":
             scenario = user_input
-
-        prompt = f"{ALLYAI_SYSTEM_PROMPT}\n\nThe user described this situation: {scenario}\nNow they said: {user_input}\nContinue the AllyAI coaching conversation using the 5-step structure."
-
+    
+        # 🛡️ NEW fallback if scenario is missing
+        if not scenario:
+            msg.body("Hmm, I didn’t quite catch that. Can you describe what’s going on again?")
+            return str(response)
+    
+        # 🛡️ NEW fallback if user didn’t say anything
+        if not user_input:
+            msg.body("Could you tell me a bit more about what's happening so I can help?")
+            return str(response)
+    
+        prompt = f"""{ALLYAI_SYSTEM_PROMPT}
+    
+    The user described this situation: {scenario}
+    Now they said: {user_input}
+    Continue the AllyAI coaching conversation using the 5-step structure."""
+    
         try:
             completion = openai.ChatCompletion.create(
                 model="gpt-4",
@@ -273,11 +287,10 @@ def bot():
                 ],
                 temperature=0.7
             )
-            reply = completion.choices[0].message['content'].strip()
+            reply = completion.choices[0].message["content"].strip()
             msg.body(reply)
-        except Exception as e:
-            print("[GPT ERROR]", e)
-            msg.body("Oops, something went wrong. Want to start over? Type 'restart'.")
-
+        except Exception:
+            msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
+    
         return str(response)
 
