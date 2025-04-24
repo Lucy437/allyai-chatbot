@@ -229,7 +229,7 @@ def bot():
             msg.body("Please choose a valid number from the list above.")
         return str(response)
 
-       if state["stage"] == "choose_scenario":
+    if state["stage"] == "choose_scenario":
         options = user_state[from_number].get("scenario_options", [])
         try:
             selected_index = int(incoming_msg) - 1
