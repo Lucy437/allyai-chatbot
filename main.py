@@ -172,20 +172,7 @@ def bot():
     
     response = MessagingResponse()
     msg = response.message()
-    if incoming_msg.lower() == "test chat":
-            try:
-                gpt_response = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant."},
-                        {"role": "user", "content": "Say hi back in 3 words"}
-                    ]
-                )
-                reply = gpt_response.choices[0].message.content.strip()
-                msg.body(f"✅ GPT says: {reply}")
-            except Exception as e:
-                msg.body(f"❌ GPT error: {str(e)}")
-            return str(response)
+   
     # ✅ SAFELY initialize user_state for this number
     if from_number not in user_state:
         user_state[from_number] = {}
@@ -300,42 +287,27 @@ def bot():
             msg.body("Could you tell me a bit more about what's happening so I can help?")
             return str(response)
     
-        # prompt = f"""
-        # The user described this situation: {scenario}
-        # Now they said: {user_input}
-        # Continue the AllyAI coaching conversation using the 5-step structure.
-        # Keep responses short, emotionally warm, and human-sounding — like a wise sister texting back.
-        # """
-        prompt = f"""User said: {user_input}"""        
+        prompt = f"""
+        The user described this situation: {scenario}
+        Now they said: {user_input}
+        Continue the AllyAI coaching conversation using the 5-step structure.
+        Keep responses short, emotionally warm, and human-sounding — like a wise sister texting back.
+        """
         try:
-            response = client.chat.completions.create(
+            gpt_response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": "Say hi back in 3 words"}
+                    {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt}
                 ],
                 temperature=0.7
             )
-            reply = response.choices[0].message.content.strip()
-            msg.body(f"✅ GPT says: {reply}")
+            reply = gpt_response.choices[0].message.content.strip()
+            msg.body(reply)
         except Exception as e:
-            msg.body(f"❌ GPT error: {str(e)}")
-        return str(response)
-        # try:
-        #     response = client.chat.completions.create(
-        #         model="gpt-4",
-        #         messages=[
-        #             {"role": "system", "content": "You are a friendly bot. Keep answers short."},
-        #             {"role": "user", "content": prompt}
-        #         ],
-        #         temperature=0.7
-        #     )
-        #     reply = response.choices[0].message.content.strip()
-        #     msg.body(reply)
-        # except Exception as e:
-        #     print("[ERROR in GPT fallback]", str(e))
-        #     msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
+            print("[ERROR in GPT fallback]", str(e))
+            msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
         
-        # return str(response)
+        return str(response)
 
 
