@@ -167,8 +167,9 @@ def generate_feedback(scores, identity):
 # WhatsApp bot route
 @app.route("/bot", methods=["POST"])
 def bot():
-    incoming_msg = request.values.get('Body', '').strip()
-    from_number = request.values.get('From')
+    from_number = request.values.get("From")
+    incoming_msg = request.values.get("Body", "").strip()
+    
     response = MessagingResponse()
     msg = response.message()
 
@@ -177,14 +178,11 @@ def bot():
         msg.body("Let's start over. 👋")
         return str(response)
 
-    if from_number not in user_state:
-        user_state[from_number] = {}
-
     if "stage" not in user_state[from_number]:
         user_state[from_number]["stage"] = "intro"
         msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
         return str(response)
-
+    
     state = user_state[from_number]
 
     if state["stage"] == "intro":
@@ -217,7 +215,7 @@ def bot():
         selected = category_map.get(incoming_msg)
         if selected:
             user_profiles[from_number]["category"] = selected
-            state["stage"] = "choose_scenario"
+            user_state[from_number]["stage"] = "choose_scenario"
 
             options = [s["scenario"] for s in SCENARIOS if s["category"] == selected]
             options.append("Something else — I want to describe my situation in my own words.")
