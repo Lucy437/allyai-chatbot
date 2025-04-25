@@ -179,8 +179,7 @@ def bot():
                     messages=[
                         {"role": "system", "content": "You are a helpful assistant."},
                         {"role": "user", "content": "Say hi back in 3 words"}
-                    ],
-                    temperature=0.7
+                    ]
                 )
                 reply = response.choices[0].message.content.strip()
                 msg.body(f"✅ GPT says: {reply}")
