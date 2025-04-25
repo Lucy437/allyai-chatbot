@@ -174,14 +174,14 @@ def bot():
     msg = response.message()
     if incoming_msg.lower() == "test chat":
             try:
-                response = client.chat.completions.create(
+                gpt_response = client.chat.completions.create(
                     model="gpt-4",
                     messages=[
                         {"role": "system", "content": "You are a helpful assistant."},
                         {"role": "user", "content": "Say hi back in 3 words"}
                     ]
                 )
-                reply = response.choices[0].message.content.strip()
+                reply = gpt_response.choices[0].message.content.strip()
                 msg.body(f"✅ GPT says: {reply}")
             except Exception as e:
                 msg.body(f"❌ GPT error: {str(e)}")
