@@ -293,22 +293,35 @@ def bot():
         # Keep responses short, emotionally warm, and human-sounding — like a wise sister texting back.
         # """
         prompt = f"""User said: {user_input}"""        
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant."},
+                        {"role": "user", "content": "Say hi back in 3 words"}
+                    ],
+                    temperature=0.7
+                )
+                reply = response.choices[0].message.content.strip()
+                msg.body(f"✅ GPT says: {reply}")
+            except Exception as e:
+                msg.body(f"❌ GPT error: {str(e)}")
+            return str(response)
+        # try:
+        #     response = client.chat.completions.create(
+        #         model="gpt-4",
+        #         messages=[
+        #             {"role": "system", "content": "You are a friendly bot. Keep answers short."},
+        #             {"role": "user", "content": prompt}
+        #         ],
+        #         temperature=0.7
+        #     )
+        #     reply = response.choices[0].message.content.strip()
+        #     msg.body(reply)
+        # except Exception as e:
+        #     print("[ERROR in GPT fallback]", str(e))
+        #     msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
         
-        try:
-            response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a friendly bot. Keep answers short."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.7
-            )
-            reply = response.choices[0].message.content.strip()
-            msg.body(reply)
-        except Exception as e:
-            print("[ERROR in GPT fallback]", str(e))
-            msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
-        
-        return str(response)
+        # return str(response)
 
 
