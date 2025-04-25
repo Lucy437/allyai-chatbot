@@ -185,20 +185,20 @@ def bot():
         msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
         return str(response)
     if incoming_msg.lower() == "test chat":
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": "Say hi back in 3 words"}
-            ],
-            temperature=0.7
-        )
-        reply = response.choices[0].message.content.strip()
-        msg.body(f"✅ GPT says: {reply}")
-    except Exception as e:
-        msg.body(f"❌ GPT error: {str(e)}")
-    return str(response)
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": "Say hi back in 3 words"}
+                ],
+                temperature=0.7
+            )
+            reply = response.choices[0].message.content.strip()
+            msg.body(f"✅ GPT says: {reply}")
+        except Exception as e:
+            msg.body(f"❌ GPT error: {str(e)}")
+        return str(response)
 
     if incoming_msg.lower() == "restart":
         user_state[from_number] = {"stage": "intro"}
