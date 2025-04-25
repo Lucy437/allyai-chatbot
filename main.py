@@ -290,7 +290,7 @@ def bot():
                 ],
                 temperature=0.7
             )
-            reply = response.choices[0].message.content.strip()
+            reply = response.choices[0].message['content'].strip()
             msg.body(reply)
         except Exception as e:
             print("[ERROR in GPT fallback]", str(e))
