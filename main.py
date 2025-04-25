@@ -173,6 +173,18 @@ def bot():
     response = MessagingResponse()
     msg = response.message()
 
+    # ✅ SAFELY initialize user_state for this number
+    if from_number not in user_state:
+        user_state[from_number] = {}
+    
+    state = user_state[from_number]  # now this is safe
+    
+    # ✅ SAFELY initialize stage if not set yet
+    if "stage" not in state:
+        state["stage"] = "intro"
+        msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
+        return str(response)
+
     if incoming_msg.lower() == "restart":
         user_state[from_number] = {"stage": "intro"}
         msg.body("Let's start over. 👋")
