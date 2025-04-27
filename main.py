@@ -163,6 +163,66 @@ def generate_feedback(scores, identity):
         f"You’re strongest in {max(scores, key=scores.get)}.\n"
         f"But we’ll also work on your {weakest_trait} — because that’s how you become unstoppable 💫"
     )
+def generate_prompt(current_step, scenario, user_input):
+    if current_step == "validation_exploration":
+        return f"""
+        The user described this situation: {scenario}
+        They now said: {user_input}
+
+        Your task:
+        - Emotionally validate the user's feelings.
+        - Ask a gentle follow-up question to explore their emotions a little more.
+        - Do not give advice yet.
+        - Keep it short, warm, and human, like texting a little sister.
+        """
+    elif current_step == "psychoeducation":
+        return f"""
+        The user said: {user_input}
+
+        Your task:
+        - Briefly explain (psychoeducate) about a common emotional pattern related to their situation (e.g., conflict avoidance, anxious attachment).
+        - Keep it non-academic, supportive, and easy to relate to.
+        - Be very brief — like a big sister casually explaining something important.
+        """
+    elif current_step == "empowerment":
+        return f"""
+        The user said: {user_input}
+
+        Your task:
+        - Empower the user by affirming their worth, their right to healthy boundaries, and their strength.
+        - Normalize their feelings and give a soft reframe.
+        - Be uplifting but tender, not pushy.
+        """
+    elif current_step == "offer_message_help":
+        return f"""
+        Ask the user if they would like help drafting a short, kind, confident message they could send to deal with their situation.
+        - If they agree, offer a simple, short sample message.
+        - Keep it practical, empowering, and natural.
+        """
+    elif current_step == "closing":
+        return f"""
+        Wrap up the conversation warmly.
+        - Remind the user they are strong, capable, and it's okay to take their time healing and growing.
+        - Thank them for sharing with AllyAI.
+        - Encourage them to reach out again anytime they need support.
+        """
+    else:
+        return f"Respond warmly based on: {user_input}."
+        
+def update_user_step(user_id):
+    steps = [
+        "validation_exploration",
+        "psychoeducation",
+        "empowerment",
+        "offer_message_help",
+        "closing"
+    ]
+    current_step = user_state[user_id].get("current_step", "validation_exploration")
+    current_index = steps.index(current_step)
+    if current_index < len(steps) - 1:
+        user_state[user_id]["current_step"] = steps[current_index + 1]
+    else:
+        user_state[user_id]["current_step"] = "closing"
 
 # WhatsApp bot route
 @app.route("/bot", methods=["POST"])
@@ -287,12 +347,20 @@ def bot():
             msg.body("Could you tell me a bit more about what's happening so I can help?")
             return str(response)
     
-        prompt = f"""
-        The user described this situation: {scenario}
-        Now they said: {user_input}
-        Continue the AllyAI coaching conversation using the 5-step structure.
-        Keep responses short, emotionally warm, and human-sounding — like a wise sister texting back.
-        """
+        # ✅ Initialize conversation step if not already set
+        if "current_step" not in user_state[from_number]:
+            user_state[from_number]["current_step"] = "validation_exploration"
+        
+        current_step = user_state[from_number]["current_step"]
+        
+        # ✅ Check relevance
+        if not is_relevant(user_input):
+            msg.body("I'm here for you 💛 Could you share a little more about what’s happening so I can support you better?")
+            return str(response)
+        
+        # ✅ Build prompt based on the current step
+        prompt = generate_prompt(current_step, scenario, user_input)
+        
         try:
             gpt_response = client.chat.completions.create(
                 model="gpt-4",
@@ -304,10 +372,15 @@ def bot():
             )
             reply = gpt_response.choices[0].message.content.strip()
             msg.body(reply)
+        
+            # ✅ After GPT reply, move to next step
+            update_user_step(from_number)
+        
         except Exception as e:
             print("[ERROR in GPT fallback]", str(e))
             msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
         
         return str(response)
+
 
 
