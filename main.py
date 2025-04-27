@@ -223,7 +223,22 @@ def update_user_step(user_id):
         user_state[user_id]["current_step"] = steps[current_index + 1]
     else:
         user_state[user_id]["current_step"] = "closing"
-
+def is_relevant(user_input):
+    irrelevant_phrases = [
+        "what's your favorite movie", 
+        "tell me a joke", 
+        "idk", 
+        "i don't know", 
+        "whatever", 
+        "lol", 
+        "you tell me"
+    ]
+    lowered = user_input.lower()
+    for phrase in irrelevant_phrases:
+        if phrase in lowered:
+            return False
+    return True
+    
 # WhatsApp bot route
 @app.route("/bot", methods=["POST"])
 def bot():
