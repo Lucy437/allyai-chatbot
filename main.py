@@ -231,6 +231,7 @@ def update_user_step(user_id):
         "psychoeducation",
         "empowerment",
         "offer_message_help",
+        "drafting_message",
         "closing"
     ]
     current_step = user_state[user_id].get("current_step", "validation_exploration")
@@ -377,17 +378,47 @@ def bot():
         if not user_input:
             msg.body("Could you tell me a bit more about what's happening so I can help?")
             return str(response)
+            
+         # ✅ Check relevance
+        if not is_relevant(user_input):
+            msg.body("I'm here for you 💛 Could you share a little more about what’s happening so I can support you better?")
+            return str(response)
     
         # ✅ Initialize conversation step if not already set
         if "current_step" not in user_state[from_number]:
             user_state[from_number]["current_step"] = "validation_exploration"
         
         current_step = user_state[from_number]["current_step"]
+        if "free_chat_mode" not in user_state[from_number]:
+            user_state[from_number]["free_chat_mode"] = False
+
+        free_chat_mode = user_state[from_number]["free_chat_mode"]
+
+        # ✅ Add Intent Detection HERE
+        def detect_intent(user_input):
+            lowered = user_input.lower()
+            if any(phrase in lowered for phrase in ["help me", "craft a message", "write a message", "what should i say", "how should i say it"]):
+                return "wants_message_help"
+            if any(phrase in lowered for phrase in ["advice", "what should i do", "what would you do", "can you advise"]):
+                return "wants_advice"
+            if any(phrase in lowered for phrase in ["i feel", "it hurts", "i'm sad", "i'm mad", "i'm confused", "i'm upset"]):
+                return "emotional_venting"
+            return "normal"
+
+        intent = detect_intent(user_input)
+
+        if not free_chat_mode:
+            if intent == "wants_message_help":
+                user_state[from_number]["current_step"] = "drafting_message"
+            elif intent == "wants_advice" and current_step not in ["psychoeducation", "empowerment", "drafting_message", "closing"]:
+                user_state[from_number]["current_step"] = "psychoeducation"
+            elif intent == "emotional_venting" and current_step != "validation_exploration":
+                user_state[from_number]["current_step"] = "validation_exploration"
         
-        # ✅ Check relevance
-        if not is_relevant(user_input):
-            msg.body("I'm here for you 💛 Could you share a little more about what’s happening so I can support you better?")
-            return str(response)
+        # ✅ After message help or drafting, move to free chat
+        if user_state[from_number]["current_step"] in ["offer_message_help", "drafting_message", "closing"]:
+            user_state[from_number]["free_chat_mode"] = True
+            free_chat_mode = True
         
         # ✅ Build prompt based on the current step
         prompt = generate_prompt(current_step, scenario, user_input)
