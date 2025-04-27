@@ -166,48 +166,64 @@ def generate_feedback(scores, identity):
 def generate_prompt(current_step, scenario, user_input):
     if current_step == "validation_exploration":
         return f"""
-        The user described this situation: {scenario}
-        They now said: {user_input}
+        User situation: {scenario}
+        User said: {user_input}
 
         Your task:
-        - Emotionally validate the user's feelings.
-        - Ask a gentle follow-up question to explore their emotions a little more.
-        - Do not give advice yet.
-        - Keep it short, warm, and human, like texting a little sister.
+        - Validate the user's feelings with warmth and empathy.
+        - Reflect the user's emotions in a natural, human tone.
+        - Gently ask one short, natural follow-up question to invite them to share more.
+        - Sound like a supportive big sister.
+        - Be very brief: no more than 3-4 short sentences.
         """
+
     elif current_step == "psychoeducation":
         return f"""
-        The user said: {user_input}
+        User situation: {scenario}
+        User said: {user_input}
 
         Your task:
-        - Briefly explain (psychoeducate) about a common emotional pattern related to their situation (e.g., conflict avoidance, anxious attachment).
-        - Keep it non-academic, supportive, and easy to relate to.
-        - Be very brief — like a big sister casually explaining something important.
+        - Briefly explain (psychoeducate) about a common emotional pattern related to their situation.
+        - Be non-academic, supportive, and easy to relate to.
+        - After sharing, ask a follow-up question to keep conversation flowing.
+        - Be warm, casual, short (3-4 sentences max).
         """
+
     elif current_step == "empowerment":
         return f"""
-        The user said: {user_input}
+        User situation: {scenario}
+        User said: {user_input}
 
         Your task:
-        - Empower the user by affirming their worth, their right to healthy boundaries, and their strength.
-        - Normalize their feelings and give a soft reframe.
-        - Be uplifting but tender, not pushy.
+        - Empower the user by affirming their worth and rights.
+        - Offer a gentle mindset reframe if appropriate.
+        - End with a short, natural invitation to reflect (e.g., "How does that feel to you?")
+        - Be tender, motivating, and brief.
         """
+
     elif current_step == "offer_message_help":
         return f"""
-        Ask the user if they would like help drafting a short, kind, confident message they could send to deal with their situation.
-        - If they agree, offer a simple, short sample message.
-        - Keep it practical, empowering, and natural.
+        User situation: {scenario}
+        User said: {user_input}
+
+        Your task:
+        - Ask the user if they would like help drafting a short message they could send.
+        - Be encouraging, practical, and warm.
         """
+
     elif current_step == "closing":
         return f"""
-        Wrap up the conversation warmly.
-        - Remind the user they are strong, capable, and it's okay to take their time healing and growing.
-        - Thank them for sharing with AllyAI.
-        - Encourage them to reach out again anytime they need support.
+        User situation: {scenario}
+        User said: {user_input}
+
+        Your task:
+        - Thank the user warmly for sharing.
+        - Affirm their strength and growth.
+        - Close the conversation with encouragement to come back anytime.
         """
+
     else:
-        return f"Respond warmly based on: {user_input}."
+        return f"Respond warmly to the user's message: {user_input}."
         
 def update_user_step(user_id):
     steps = [
