@@ -218,8 +218,7 @@ TASK:
     else:
         return f"""
 You are AllyAI — a warm, emotionally intelligent coach speaking like a supportive big sister.
-
-Respond warmly and naturally to what the user said: {user_input}.
+"""
 def update_user_step(user_id):
     steps = [
         "validation_exploration",
@@ -235,7 +234,7 @@ def update_user_step(user_id):
         user_state[user_id]["current_step"] = steps[current_index + 1]
     else:
         user_state[user_id]["current_step"] = "closing"
-"""
+        
 # WhatsApp bot route
 @app.route("/bot", methods=["POST"])
 def bot():
