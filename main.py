@@ -220,6 +220,21 @@ TASK:
 You are AllyAI — a warm, emotionally intelligent coach speaking like a supportive big sister.
 
 Respond warmly and naturally to what the user said: {user_input}.
+def update_user_step(user_id):
+    steps = [
+        "validation_exploration",
+        "psychoeducation",
+        "empowerment",
+        "offer_message_help",
+        "drafting_message",
+        "closing"
+    ]
+    current_step = user_state[user_id].get("current_step", "validation_exploration")
+    current_index = steps.index(current_step)
+    if current_index < len(steps) - 1:
+        user_state[user_id]["current_step"] = steps[current_index + 1]
+    else:
+        user_state[user_id]["current_step"] = "closing"
 """
 # WhatsApp bot route
 @app.route("/bot", methods=["POST"])
