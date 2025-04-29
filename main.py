@@ -343,8 +343,8 @@ def bot():
             msg.body("Could you tell me a bit more about what's happening so I can help?")
             return str(response)
             
-         # ✅ Check relevance
-        if not is_relevant(user_input):
+    # ✅ Check relevance
+    if not is_relevant(user_input):
             msg.body("I'm here for you 💛 Could you share a little more about what’s happening so I can support you better?")
             return str(response)
     
