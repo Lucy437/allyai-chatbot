@@ -106,6 +106,17 @@ assessment_questions = [
 def is_relevant(text):
     return len(text.strip()) > 5
     
+def update_user_step(user_id):
+    current = user_state[user_id].get("current_step", "")
+    next_step_map = {
+        "validation_exploration": "psychoeducation",
+        "psychoeducation": "empowerment",
+        "empowerment": "offer_message_help",
+        "offer_message_help": "closing",
+        "closing": "closing"  # or optionally restart or suggest another topic
+    }
+    user_state[user_id]["current_step"] = next_step_map.get(current, "closing")
+    
 def get_next_assessment_question(user_id):
     session = user_sessions[user_id]
     q_index = session["current_q"]
