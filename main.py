@@ -103,7 +103,9 @@ assessment_questions = [
         "scores": {"a": 1, "b": 2, "c": 3, "d": 4}
     }
 ]
-
+def is_relevant(text):
+    return len(text.strip()) > 5
+    
 def get_next_assessment_question(user_id):
     session = user_sessions[user_id]
     q_index = session["current_q"]
