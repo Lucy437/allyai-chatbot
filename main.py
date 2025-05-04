@@ -239,37 +239,41 @@ def bot():
     
     response = MessagingResponse()
     msg = response.message()
-   
-    # ✅ SAFELY initialize user_state for this number
-    if from_number not in user_state:
-        user_state[from_number] = {}
     
-    state = user_state[from_number]  # now this is safe
-    
-    # ✅ SAFELY initialize stage if not set yet
-    if "stage" not in state:
-        state["stage"] = "intro"
-        msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
-        return str(response)
-    
-
+    # ✅ Restart handling
     if incoming_msg.lower() == "restart":
         user_state[from_number] = {"stage": "intro"}
-        msg.body("Let's start over. 👋, What is your Name")
+        user_profiles[from_number] = {}
+        msg.body("Let's start over. 👋 What’s your name?")
         return str(response)
-
+    
+    # ✅ Initialize user if first interaction
+    if from_number not in user_state:
+        user_state[from_number] = {"stage": "intro"}
+        user_profiles[from_number] = {}
+        msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
+        return str(response)
+    
+    # ✅ Fallback if stage is missing
     if "stage" not in user_state[from_number]:
         user_state[from_number]["stage"] = "intro"
-        msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
+        msg.body("Hi, I'm Ally 👋\nWhat’s your name?")
         return str(response)
     
     state = user_state[from_number]
-
+    
+    # ✅ Only respond to name once during intro
     if state["stage"] == "intro":
-        user_profiles[from_number] = {"name": incoming_msg.title()}
-        user_state[from_number]["stage"] = "choose_path"
-        msg.body(f"Nice to meet you, {incoming_msg.title()}!\n\nHow can I help you today?\n1. Ask for advice\n2. Take a quick assessment to understand your relationship style")
+        if "name" not in user_profiles.get(from_number, {}):
+            name = incoming_msg.title()
+            user_profiles[from_number] = {"name": name}
+            user_state[from_number]["stage"] = "choose_path"
+            msg.body(f"Nice to meet you, {name}!\n\nHow can I help you today?\n1. Ask for advice\n2. Take a quick assessment to understand your relationship style")
+        else:
+            # Prevent weird behavior if they say "Hi" again
+            msg.body("Just reply with 1 or 2 to continue:\n1. Ask for advice\n2. Take a quick assessment")
         return str(response)
+
 
     if state["stage"] == "choose_path":
         if incoming_msg == "1":
