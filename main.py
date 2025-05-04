@@ -337,8 +337,17 @@ def bot():
             identity = assign_identity(scores)
             feedback = generate_feedback(scores, identity)
             del user_sessions[from_number]
-            msg.body(feedback)
+    
+            # ✅ Reset stage so they can choose what's next
+            user_state[from_number]["stage"] = "choose_path"
+    
+            # ✅ Offer next options after feedback
+            msg.body(
+                feedback + 
+                "\n\nWhat would you like to do next?\n1. Get advice\n2. Restart"
+            )
         return str(response)
+
 
     if state["stage"] in ["gpt_mode", "gpt_mode_custom"]:
         scenario = user_profiles.get(from_number, {}).get("scenario", "").strip()
