@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify
 from twilio.twiml.messaging_response import MessagingResponse
 from flask_cors import CORS
 import openai
@@ -107,18 +107,16 @@ def is_relevant(text):
     return len(text.strip()) > 5
     
 def update_user_step(user_id):
-    if user_id not in user_state:
-        user_state[user_id] = {"current_step": "validation_exploration"}
     current = user_state[user_id].get("current_step", "")
     next_step_map = {
         "validation_exploration": "psychoeducation",
         "psychoeducation": "empowerment",
         "empowerment": "offer_message_help",
         "offer_message_help": "closing",
-        "closing": "closing"
+        "closing": "closing"  # or optionally restart or suggest another topic
     }
     user_state[user_id]["current_step"] = next_step_map.get(current, "closing")
-
+    
 def get_next_assessment_question(user_id):
     session = user_sessions[user_id]
     q_index = session["current_q"]
@@ -241,49 +239,37 @@ def bot():
     
     response = MessagingResponse()
     msg = response.message()
+   
+    # ✅ SAFELY initialize user_state for this number
+    if from_number not in user_state:
+        user_state[from_number] = {}
     
-    # ✅ Restart handling
+    state = user_state[from_number]  # now this is safe
+    
+    # ✅ SAFELY initialize stage if not set yet
+    if "stage" not in state:
+        state["stage"] = "intro"
+        msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
+        return str(response)
+    
+
     if incoming_msg.lower() == "restart":
         user_state[from_number] = {"stage": "intro"}
-        user_profiles[from_number] = {}
-        msg.body("Let's start over. 👋 What’s your name?")
+        msg.body("Let's start over. 👋, What is your Name")
         return str(response)
-        
-    print(f"📲 from_number = {from_number}")
-    print(f"📥 incoming_msg = {incoming_msg}")
 
-    if not from_number or from_number.strip() == "":
-        msg.body("Oops — I couldn’t detect your phone number. Try again later.")
-        return str(response)
-    
-    if from_number not in user_state:
-        print("🆕 New user detected:", from_number)
-        user_state[from_number] = {"stage": "intro"}
-        user_profiles[from_number] = {}
-        msg.body("Hi, I'm Ally. I'm here to support you. What's your name?")
-        return Response(str(response), content_type='application/xml')
-
-    
-    # ✅ Fallback if stage is missing
     if "stage" not in user_state[from_number]:
         user_state[from_number]["stage"] = "intro"
-        msg.body("Hi, I'm Ally 👋\nWhat’s your name?")
+        msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
         return str(response)
     
     state = user_state[from_number]
-    
-    # ✅ Only respond to name once during intro
-    if state["stage"] == "intro":
-        if "name" not in user_profiles.get(from_number, {}):
-            name = incoming_msg.title()
-            user_profiles[from_number].update({"name": name})
-            user_state[from_number]["stage"] = "choose_path"
-            msg.body(f"Nice to meet you, {name}!\n\nHow can I help you today?\n1. Ask for advice\n2. Take a quick assessment to understand your relationship style")
-        else:
-            # Prevent weird behavior if they say "Hi" again
-            msg.body("Just reply with 1 or 2 to continue:\n1. Ask for advice\n2. Take a quick assessment")
-        return str(response)
 
+    if state["stage"] == "intro":
+        user_profiles[from_number] = {"name": incoming_msg.title()}
+        user_state[from_number]["stage"] = "choose_path"
+        msg.body(f"Nice to meet you, {incoming_msg.title()}!\n\nHow can I help you today?\n1. Ask for advice\n2. Take a quick assessment to understand your relationship style")
+        return str(response)
 
     if state["stage"] == "choose_path":
         if incoming_msg == "1":
@@ -291,7 +277,7 @@ def bot():
             msg.body("Choose a topic you want to talk about:\n1. Romantic Partner Issues\n2. Friendship Challenges\n3. Family Tensions\n4. Building Self-Confidence\n5. Overcoming Insecurity\n6. Urgent Advice")
         elif incoming_msg == "2":
             user_sessions[from_number] = {"current_q": 0, "answers": []}
-            user_state[from_number]["stage"] = "assessment"
+            # user_state[from_number]["stage"] = "assessment"
             first_q = get_next_assessment_question(from_number)
             msg.body("Let’s begin! ✨\n\n" + first_q)
         else:
@@ -350,18 +336,9 @@ def bot():
             scores = calculate_trait_scores(user_sessions[from_number]["answers"])
             identity = assign_identity(scores)
             feedback = generate_feedback(scores, identity)
-    
-            # ✅ Offer next options after feedback
-            msg.body(
-                feedback + 
-                "\n\nWhat would you like to do next?\n1. Get advice\n2. Restart"
-            )
             del user_sessions[from_number]
-    
-            # ✅ Reset stage so they can choose what's next
-            user_state[from_number]["stage"] = "choose_path"
+            msg.body(feedback)
         return str(response)
-
 
     if state["stage"] in ["gpt_mode", "gpt_mode_custom"]:
         scenario = user_profiles.get(from_number, {}).get("scenario", "").strip()
@@ -442,9 +419,3 @@ def bot():
             msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
         
         return str(response)
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # fallback to 5000 if running locally
-    app.run(host="0.0.0.0", port=port)
-
-
-
