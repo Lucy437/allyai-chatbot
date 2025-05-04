@@ -107,16 +107,18 @@ def is_relevant(text):
     return len(text.strip()) > 5
     
 def update_user_step(user_id):
+    if user_id not in user_state:
+        user_state[user_id] = {"current_step": "validation_exploration"}
     current = user_state[user_id].get("current_step", "")
     next_step_map = {
         "validation_exploration": "psychoeducation",
         "psychoeducation": "empowerment",
         "empowerment": "offer_message_help",
         "offer_message_help": "closing",
-        "closing": "closing"  # or optionally restart or suggest another topic
+        "closing": "closing"
     }
     user_state[user_id]["current_step"] = next_step_map.get(current, "closing")
-    
+
 def get_next_assessment_question(user_id):
     session = user_sessions[user_id]
     q_index = session["current_q"]
@@ -246,13 +248,21 @@ def bot():
         user_profiles[from_number] = {}
         msg.body("Let's start over. 👋 What’s your name?")
         return str(response)
+        
+    print(f"📲 from_number = {from_number}")
+    print(f"📥 incoming_msg = {incoming_msg}")
+
+    if not from_number or from_number.strip() == "":
+        msg.body("Oops — I couldn’t detect your phone number. Try again later.")
+        return str(response)
     
-    # ✅ Initialize user if first interaction
     if from_number not in user_state:
+        print("🆕 New user detected:", from_number)
         user_state[from_number] = {"stage": "intro"}
         user_profiles[from_number] = {}
         msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
         return str(response)
+
     
     # ✅ Fallback if stage is missing
     if "stage" not in user_state[from_number]:
@@ -266,7 +276,7 @@ def bot():
     if state["stage"] == "intro":
         if "name" not in user_profiles.get(from_number, {}):
             name = incoming_msg.title()
-            user_profiles[from_number] = {"name": name}
+            user_profiles[from_number].update({"name": name})
             user_state[from_number]["stage"] = "choose_path"
             msg.body(f"Nice to meet you, {name}!\n\nHow can I help you today?\n1. Ask for advice\n2. Take a quick assessment to understand your relationship style")
         else:
