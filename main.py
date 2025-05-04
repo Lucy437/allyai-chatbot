@@ -130,7 +130,8 @@ def handle_assessment_answer(user_id, answer_letter):
     session = user_sessions[user_id]
     q_index = session["current_q"]
     q = assessment_questions[q_index]
-    score = q["scores"].get(answer_letter.lower(), 0)
+    answer_letter = answer_letter.strip().lower()[0]
+    score = q["scores"].get(answer_letter, 0)
     session["answers"].append({"dimension": q["dimension"], "score": score})
     session["current_q"] += 1
 
@@ -254,7 +255,7 @@ def bot():
 
     if incoming_msg.lower() == "restart":
         user_state[from_number] = {"stage": "intro"}
-        msg.body("Let's start over. 👋")
+        msg.body("Let's start over. 👋, What is your Name")
         return str(response)
 
     if "stage" not in user_state[from_number]:
@@ -276,6 +277,7 @@ def bot():
             msg.body("Choose a topic you want to talk about:\n1. Romantic Partner Issues\n2. Friendship Challenges\n3. Family Tensions\n4. Building Self-Confidence\n5. Overcoming Insecurity\n6. Urgent Advice")
         elif incoming_msg == "2":
             user_sessions[from_number] = {"current_q": 0, "answers": []}
+            user_state[from_number]["stage"] = "assessment"
             first_q = get_next_assessment_question(from_number)
             msg.body("Let’s begin! ✨\n\n" + first_q)
         else:
@@ -325,7 +327,7 @@ def bot():
             msg.body("Please reply with the number of your choice.")
         return str(response)
 
-    if from_number in user_sessions:
+    if state.get("stage") == "assessment" and from_number in user_sessions:
         handle_assessment_answer(from_number, incoming_msg)
         next_q = get_next_assessment_question(from_number)
         if next_q:
