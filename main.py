@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from twilio.twiml.messaging_response import MessagingResponse
 from flask_cors import CORS
 import openai
@@ -260,7 +260,7 @@ def bot():
         print("🆕 New user detected:", from_number)
         user_state[from_number] = {"stage": "intro"}
         user_profiles[from_number] = {}
-        msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
+        msg.body("Hi, I'm Ally. I'm here to support you. What's your name?")
         return str(response)
 
     
