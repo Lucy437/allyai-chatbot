@@ -428,6 +428,9 @@ def bot():
             msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
         
         return str(response)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  # fallback to 5000 if running locally
+    app.run(host="0.0.0.0", port=port)
 
 
 
