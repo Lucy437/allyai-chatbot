@@ -261,7 +261,7 @@ def bot():
         user_state[from_number] = {"stage": "intro"}
         user_profiles[from_number] = {}
         msg.body("Hi, I'm Ally. I'm here to support you. What's your name?")
-        return str(response)
+        return Response(str(response), content_type='application/xml')
 
     
     # ✅ Fallback if stage is missing
