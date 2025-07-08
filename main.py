@@ -3,6 +3,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 from flask_cors import CORS
 import openai
 from openai import OpenAI
+from analytics import init_db, log_event
 import os
 import json 
 # Load all scenario scripts from JSON
@@ -11,6 +12,12 @@ with open("scenarios.json", "r", encoding="utf-8") as f:
 
 app = Flask(__name__)
 CORS(app)
+# Initialize DB (only once when app starts)
+try:
+    init_db()
+except Exception as e:
+    print(f"DB Init failed: {e}")
+
 # Track user states
 user_state = {}
 user_profiles = {}
@@ -238,12 +245,17 @@ def generate_prompt(current_step, scenario, user_input):
 def bot():
     from_number = request.values.get("From")
     incoming_msg = request.values.get("Body", "").strip()
+    log_event(from_number, "message_received", {
+    "input": incoming_msg,
+    "stage": user_state.get(from_number, {}).get("stage", "unknown")
+    })
     
     response = MessagingResponse()
     msg = response.message()
     
     # ✅ Restart handling
     if incoming_msg.lower() == "restart":
+        log_event(from_number, "user_restarted", {})
         user_state[from_number] = {"stage": "intro"}
         user_profiles[from_number] = {}
         msg.body("Let's start over. 👋 What’s your name?")
@@ -257,6 +269,7 @@ def bot():
         return str(response)
     
     if from_number not in user_state:
+        log_event(from_number, "user_started_session", {})
         print("🆕 New user detected:", from_number)
         user_state[from_number] = {"stage": "intro"}
         user_profiles[from_number] = {}
@@ -294,6 +307,7 @@ def bot():
             user_state[from_number]["stage"] = "assessment"
             first_q = get_next_assessment_question(from_number)
             msg.body("Let’s begin! ✨\n\n" + first_q)
+            log_event(from_number, "assessment_started", {})
         else:
             msg.body("Please reply with 1 or 2.")
         return str(response)
@@ -318,6 +332,9 @@ def bot():
             user_state[from_number]["scenario_options"] = options
             option_text = "\n".join([f"{i+1}. {s}" for i, s in enumerate(options)])
             msg.body(f"Thanks! Here are some common situations under *{selected}*:\n\n{option_text}\n\nReply with the number that fits your situation.")
+            log_event(from_number, "category_selected", {
+                        "category": selected
+                    })
         else:
             msg.body("Please choose a valid number from the list above.")
         return str(response)
@@ -330,6 +347,10 @@ def bot():
                 scenario = options[selected_index]
                 user_profiles[from_number]["scenario"] = scenario
                 user_state[from_number]["stage"] = "gpt_mode"
+                log_event(from_number, "scenario_selected", {
+                    "category": user_profiles[from_number].get("category"),
+                    "scenario": scenario
+                })
                 msg.body("Thanks for sharing that. I’m here for you 💛 Just tell me a bit more about what’s been going on, and we’ll work through it together.")
             elif selected_index == len(options) - 1:
                 user_state[from_number]["stage"] = "gpt_mode_custom"
@@ -342,6 +363,10 @@ def bot():
         return str(response)
 
     if state.get("stage") == "assessment" and from_number in user_sessions:
+        log_event(from_number, "assessment_answered", {
+            "question": assessment_questions[q_index]["text"],
+            "answer": incoming_msg
+        })
         handle_assessment_answer(from_number, incoming_msg)
         next_q = get_next_assessment_question(from_number)
         if next_q:
@@ -350,6 +375,11 @@ def bot():
             scores = calculate_trait_scores(user_sessions[from_number]["answers"])
             identity = assign_identity(scores)
             feedback = generate_feedback(scores, identity)
+            log_event(from_number, "assessment_completed", {
+                "scores": scores,
+                "identity": identity
+            })
+
     
             # ✅ Offer next options after feedback
             msg.body(
@@ -405,6 +435,11 @@ def bot():
             return "normal"
 
         intent = detect_intent(user_input)
+        log_event(from_number, "gpt_step", {
+            "step": user_state[from_number]["current_step"],
+            "intent": intent,
+            "input": user_input
+        })
 
         if not free_chat_mode:
             if intent == "wants_message_help":
@@ -418,7 +453,6 @@ def bot():
         if user_state[from_number]["current_step"] in ["offer_message_help", "drafting_message", "closing"]:
             user_state[from_number]["free_chat_mode"] = True
             free_chat_mode = True
-        
         # ✅ Build prompt based on the current step
         prompt = generate_prompt(current_step, scenario, user_input)
         
@@ -433,6 +467,10 @@ def bot():
             )
             reply = gpt_response.choices[0].message.content.strip()
             msg.body(reply)
+            log_event(from_number, "gpt_reply_sent", {
+                    "step": current_step,
+                    "reply": reply
+                })
         
             # ✅ After GPT reply, move to next step
             update_user_step(from_number)
