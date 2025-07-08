@@ -363,6 +363,9 @@ def bot():
         return str(response)
 
     if state.get("stage") == "assessment" and from_number in user_sessions:
+        session = user_sessions[from_number]
+        q_index = session["current_q"]  # get current question index BEFORE it's incremented
+    
         log_event(from_number, "assessment_answered", {
             "question": assessment_questions[q_index]["text"],
             "answer": incoming_msg
