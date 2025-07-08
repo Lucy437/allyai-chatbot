@@ -3,3 +3,4 @@ twilio
 openai
 gunicorn
 flask_cors
+psycopg2-binary
