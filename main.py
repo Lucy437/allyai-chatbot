@@ -255,11 +255,27 @@ def bot():
     
     # ✅ Restart handling
     if incoming_msg.lower() == "restart":
-        log_event(from_number, "user_restarted", {})
-        user_state[from_number] = {"stage": "intro"}
-        user_profiles[from_number] = {}
+    log_event(from_number, "user_restarted", {})
+    
+    # Reset in-memory state
+    user_state[from_number] = {"stage": "choose_path"}
+    user_sessions.pop(from_number, None)  # clear any unfinished assessments
+    
+    # Fetch saved name from DB
+    profile = get_user_profile(from_number)
+    if profile and profile["name"]:
+        msg.body(
+            f"Hi {profile['name']} 👋 Starting fresh!\n\n"
+            "How can I help you today?\n"
+            "1. Ask for advice\n"
+            "2. Take a quick assessment\n"
+            "3. Play 'What Would You Do?'"
+        )
+    else:
         msg.body("Let's start over. 👋 What’s your name?")
-        return str(response)
+    
+    return str(response)
+
         
     print(f"📲 from_number = {from_number}")
     print(f"📥 incoming_msg = {incoming_msg}")
