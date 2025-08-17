@@ -1,0 +1,202 @@
+{
+  "Building Confidence": [
+    {
+      "title": "Recognizing Your Strengths",
+      "scenario": "You’re in a group conversation and someone asks, 'What’s something you’re good at?' You feel shy and want to downplay it.",
+      "options": {
+        "A": "Share one strength proudly.",
+        "B": "Downplay it with, 'Oh, nothing special.'",
+        "C": "Change the topic."
+      },
+      "feedback": {
+        "A": "That’s great! Speaking about your strengths reinforces your self-worth and teaches others to value you too.",
+        "B": "Many of us were raised to 'stay humble,' but hiding your strengths can lower how others see your value. Start practicing saying them out loud, even if it feels awkward.",
+        "C": "Many of us were raised to 'stay humble,' but hiding your strengths can lower how others see your value. Start practicing saying them out loud, even if it feels awkward."
+      },
+      "mini_lesson": "Confidence starts with knowing your value. Listing your strengths shifts your mind from self-criticism to self-recognition — and sharing them builds connection.",
+      "challenge": "Write down 3 things you’re proud of (skills, strengths, accomplishments). Share them with a friend and ask her to do the same."
+    },
+    {
+      "title": "Using Your Voice",
+      "scenario": "You’re in a family or friend discussion, and you have a different opinion from everyone else.",
+      "options": {
+        "A": "Share your opinion respectfully.",
+        "B": "Stay quiet to avoid disagreement.",
+        "C": "Make a joke to change the topic."
+      },
+      "feedback": {
+        "A": "Well done! Using your voice in safe situations builds your confidence muscle.",
+        "B": "Avoiding speaking up may feel safe in the moment, but it also reinforces self-doubt. Practice small moments of expression — it gets easier each time.",
+        "C": "Avoiding speaking up may feel safe in the moment, but it also reinforces self-doubt. Practice small moments of expression — it gets easier each time."
+      },
+      "mini_lesson": "Clear voice and grounded presence make others take you seriously. Even small changes in how you speak can shift how you are treated.",
+      "challenge": "Think of one moment today where you can share your opinion in a safe setting — at school, work, with friends, or family. Start with, 'I think…' or 'In my view…' and say it clearly."
+    },
+    {
+      "title": "Challenging Negative Self-Talk",
+      "scenario": "You make a small mistake in public. Your first thought is, 'I’m so stupid.'",
+      "options": {
+        "A": "Pause and reframe with a kinder statement.",
+        "B": "Keep repeating the negative thought in your head.",
+        "C": "Try to ignore it but still feel bad."
+      },
+      "feedback": {
+        "A": "Excellent! Reframing helps break the habit of self-criticism and replaces it with self-compassion.",
+        "B": "The brain believes what it hears most. Reframing with facts ('I made a mistake, but I’m learning') changes how you feel and act.",
+        "C": "The brain believes what it hears most. Reframing with facts ('I made a mistake, but I’m learning') changes how you feel and act."
+      },
+      "mini_lesson": "Thoughts aren’t always facts. Reframing teaches your brain to see situations more realistically, boosting self-esteem.",
+      "challenge": "Notice and write down one negative thought today. Ask yourself, 'Is this 100% true?' Then reframe it into a kind, factual statement."
+    },
+    {
+      "title": "Confident Body Language",
+      "scenario": "You’re walking into a room where you don’t know many people.",
+      "options": {
+        "A": "Walk in with shoulders back, chin up, and smile.",
+        "B": "Look down and walk quickly to your seat.",
+        "C": "Pull out your phone to avoid eye contact."
+      },
+      "feedback": {
+        "A": "Great! Body language sends powerful messages to others and to your own brain about confidence.",
+        "B": "You may be signaling insecurity without realizing it. Practice 'power posture' — it boosts both presence and mood.",
+        "C": "You may be signaling insecurity without realizing it. Practice 'power posture' — it boosts both presence and mood."
+      },
+      "mini_lesson": "Body language sends signals before you speak. Upright posture tells both you and others that you are confident and capable.",
+      "challenge": "Today, practice walking with your shoulders relaxed, chin slightly up, and eyes forward. Notice how people respond to you — and how you feel about yourself."
+    }
+  ],
+
+  "Recognizing Red Flags": [
+    {
+      "title": "Ignoring Your Needs",
+      "scenario": "Your partner keeps making plans without asking you, even when you’ve told them you’re busy. Today, they planned a big outing for Saturday without asking.",
+      "options": {
+        "A": "Go along with it to avoid upsetting them.",
+        "B": "Calmly explain you already have plans and ask to discuss future plans together.",
+        "C": "Cancel your other plans because you feel guilty."
+      },
+      "feedback": {
+        "A": "Avoiding conflict might seem easier now, but it can lead to your needs being dismissed. This is a red flag for respect imbalance.",
+        "B": "✅ This response sets a healthy boundary and invites mutual respect.",
+        "C": "Constantly sacrificing your needs for someone else’s wishes is a sign of unhealthy control in a relationship."
+      },
+      "mini_lesson": "Healthy relationships respect both people’s needs. Frequent disregard for your plans is a sign to pay attention.",
+      "challenge": "Write down one time someone ignored your needs. How could you have voiced your boundaries differently?"
+    },
+    {
+      "title": "Controlling Communication",
+      "scenario": "Your friend gets upset if you don’t reply to their messages immediately, and they keep asking where you are and who you’re with.",
+      "options": {
+        "A": "Apologize every time and try to respond faster.",
+        "B": "Explain kindly that you can’t always reply right away.",
+        "C": "Stop replying altogether to avoid drama."
+      },
+      "feedback": {
+        "A": "This reinforces the idea that they can control your time.",
+        "B": "✅ This communicates your boundaries while maintaining the friendship.",
+        "C": "Avoidance may bring short-term peace, but it won’t solve the underlying control issue."
+      },
+      "mini_lesson": "Demanding constant availability is a red flag for possessiveness. Healthy connections allow space.",
+      "challenge": "Practice sending a message that sets limits, like: 'I care about you, but I can’t always reply right away.'"
+    },
+    {
+      "title": "Emotional Manipulation",
+      "scenario": "A person close to you often says, 'If you really loved me, you’d do this for me.'",
+      "options": {
+        "A": "Agree, even if you don’t want to, to avoid guilt.",
+        "B": "Calmly point out that love is not proven through doing everything asked.",
+        "C": "Ignore the comment and do nothing."
+      },
+      "feedback": {
+        "A": "This is falling into emotional manipulation, which can become abusive.",
+        "B": "✅ This addresses the manipulation directly and protects your self-worth.",
+        "C": "Silence may avoid confrontation but doesn’t address the toxic behavior."
+      },
+      "mini_lesson": "Love and respect are built on trust, not guilt or control. Guilt-tripping is a red flag.",
+      "challenge": "Practice saying: 'I care about you, but I can’t do that right now.'"
+    },
+    {
+      "title": "Public Disrespect",
+      "scenario": "Your partner makes jokes about you in front of friends that hurt your feelings.",
+      "options": {
+        "A": "Laugh it off even though it hurts.",
+        "B": "Wait until you’re alone, then explain calmly that those jokes make you uncomfortable.",
+        "C": "Drop subtle hints in the moment that you didn’t like it, without causing a scene."
+      },
+      "feedback": {
+        "A": "Staying silent may feel safer, but repeated disrespect can damage your self-worth.",
+        "B": "✅ Addressing the issue privately protects your dignity while making your feelings clear.",
+        "C": "This can be a safer way to signal discomfort if direct confrontation in public is risky."
+      },
+      "mini_lesson": "In many cultures, preserving harmony in public is important — but that doesn’t mean you must accept hurtful behavior.",
+      "challenge": "Think of a safe phrase you could use in public to gently deflect a hurtful comment — e.g., 'Let’s talk about that later.'"
+    }
+  ],
+
+  "Setting Boundaries & Saying No": [
+    {
+      "title": "Money and Friendship",
+      "scenario": "Your best friend asks to borrow money, but you’ve been saving for months for your own important goal. She says, 'If you were a real friend, you’d help me.'",
+      "options": {
+        "A": "Give her the money even though it will ruin your plans.",
+        "B": "Explain kindly that you can’t lend that amount but can help in other ways.",
+        "C": "Avoid answering and hope she forgets."
+      },
+      "feedback": {
+        "A": "This sacrifices your needs to avoid guilt — it sets a harmful precedent.",
+        "B": "✅ This respects your boundaries while offering support within your limits.",
+        "C": "Avoidance leaves the issue unresolved and may strain the friendship."
+      },
+      "mini_lesson": "True friendship respects limits. You can say no without ending the friendship.",
+      "challenge": "Practice saying: 'I really want to help, but I can’t give that amount. I can support you in another way.'"
+    },
+    {
+      "title": "Privacy and Trust",
+      "scenario": "Your boyfriend often asks for your phone password 'just to check something,' and gets upset when you hesitate.",
+      "options": {
+        "A": "Give him your password to avoid an argument.",
+        "B": "Explain that trust means respecting privacy, even in relationships.",
+        "C": "Delete private chats first, then share your password."
+      },
+      "feedback": {
+        "A": "This creates a habit of giving in to pressure — it’s not healthy trust.",
+        "B": "✅ This sets a clear boundary and reinforces the value of privacy.",
+        "C": "This tries to protect yourself but still gives away your boundaries."
+      },
+      "mini_lesson": "Love is built on trust, not control. Your phone is your personal space.",
+      "challenge": "Practice saying: 'I trust you, and I need my privacy respected.'"
+    },
+    {
+      "title": "Peer Pressure",
+      "scenario": "A friend insists you skip studying for an important exam to attend a party, saying, 'Don’t be boring — we never have fun anymore.'",
+      "options": {
+        "A": "Go to the party to keep her happy.",
+        "B": "Explain you can’t skip studying but can hang out after the exam.",
+        "C": "Ignore her texts until the party is over."
+      },
+      "feedback": {
+        "A": "This sacrifices your priorities for peer pressure.",
+        "B": "✅ This shows respect for your own goals and offers a compromise.",
+        "C": "Avoidance might prevent confrontation but damages communication."
+      },
+      "mini_lesson": "Saying 'no' to peer pressure is a sign of self-respect and maturity.",
+      "challenge": "Say no to a small request this week that you truly don’t have time or energy for."
+    },
+    {
+      "title": "Appearance and Control",
+      "scenario": "Your boyfriend wants you to dress a certain way when meeting his friends, saying, 'If you dress like this, they’ll like you more.'",
+      "options": {
+        "A": "Wear what he wants so you don’t cause a fight.",
+        "B": "Explain you will dress in a way that makes you comfortable.",
+        "C": "Pretend to agree but change back to your style at the last moment."
+      },
+      "feedback": {
+        "A": "This gives away control over your choices and appearance.",
+        "B": "✅ This keeps your self-expression intact while setting a firm boundary.",
+        "C": "This avoids conflict temporarily but doesn’t address the underlying issue."
+      },
+      "mini_lesson": "Your appearance is your choice. Healthy relationships respect individuality.",
+      "challenge": "Wear something today that feels like you, without worrying about others’ opinions."
+    }
+  ]
+}
