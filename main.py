@@ -323,7 +323,7 @@ def bot():
             msg.body("🎲 Welcome to *What Would You Do?*\n\nPick a growth path:\n1. Building Confidence\n2. Recognizing Red Flags\n3. Setting Boundaries & Saying No")
         else:
             msg.body("Please reply with 1, 2, or 3.")
-            return str(response)
+        return str(response)
 
     if state["stage"] == "choose_category":
         category_map = {
