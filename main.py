@@ -3,7 +3,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 from flask_cors import CORS
 import openai
 from openai import OpenAI
-from analytics import init_db, log_event
+from analytics import init_db, log_event,create_or_update_user, get_user_profile
 import os
 import json 
 # Load all scenario scripts from JSON
@@ -269,12 +269,21 @@ def bot():
         return str(response)
     
     if from_number not in user_state:
-        log_event(from_number, "user_started_session", {})
-        print("🆕 New user detected:", from_number)
-        user_state[from_number] = {"stage": "intro"}
-        user_profiles[from_number] = {}
-        msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
-        return str(response)
+        profile = get_user_profile(from_number)
+        if profile and profile["name"]:
+            # Returning user with a saved name
+            msg.body(f"Hi {profile['name']} 👋 Welcome back! 💛")
+            user_state[from_number] = {"stage": "choose_path"}
+            return str(response)
+        else:
+            # New user
+            log_event(from_number, "user_started_session", {})
+            print("🆕 New user detected:", from_number)
+            user_state[from_number] = {"stage": "intro"}
+            user_profiles[from_number] = {}
+            msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
+            return str(response)
+
 
     
     # ✅ Fallback if stage is missing
@@ -290,6 +299,8 @@ def bot():
         if "name" not in user_profiles.get(from_number, {}):
             name = incoming_msg.title()
             user_profiles[from_number].update({"name": name})
+            # ✅ Save to Postgres
+            create_or_update_user(from_number, name=name)
             user_state[from_number]["stage"] = "choose_path"
             msg.body(
                     f"Nice to meet you, {name}!\n\nHow can I help you today?\n"
