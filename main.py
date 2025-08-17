@@ -291,10 +291,20 @@ def bot():
             name = incoming_msg.title()
             user_profiles[from_number].update({"name": name})
             user_state[from_number]["stage"] = "choose_path"
-            msg.body(f"Nice to meet you, {name}!\n\nHow can I help you today?\n1. Ask for advice\n2. Take a quick assessment to understand your relationship style")
+            msg.body(
+                    f"Nice to meet you, {name}!\n\nHow can I help you today?\n"
+                    "1. Ask for advice\n"
+                    "2. Take a quick assessment to understand your relationship style\n"
+                    "3. Play 'What Would You Do?'"
+                )
         else:
             # Prevent weird behavior if they say "Hi" again
-            msg.body("Just reply with 1 or 2 to continue:\n1. Ask for advice\n2. Take a quick assessment")
+            msg.body(
+                    "Just reply with 1, 2, or 3 to continue:\n"
+                    "1. Ask for advice\n"
+                    "2. Take a quick assessment\n"
+                    "3. Play 'What Would You Do?'"
+                )
         return str(response)
 
 
@@ -308,9 +318,12 @@ def bot():
             first_q = get_next_assessment_question(from_number)
             msg.body("Let’s begin! ✨\n\n" + first_q)
             log_event(from_number, "assessment_started", {})
+        elif incoming_msg == "3":
+            user_state[from_number]["stage"] = "choose_track"
+            msg.body("🎲 Welcome to *What Would You Do?*\n\nPick a growth path:\n1. Building Confidence\n2. Recognizing Red Flags\n3. Setting Boundaries & Saying No")
         else:
-            msg.body("Please reply with 1 or 2.")
-        return str(response)
+            msg.body("Please reply with 1, 2, or 3.")
+            return str(response)
 
     if state["stage"] == "choose_category":
         category_map = {
