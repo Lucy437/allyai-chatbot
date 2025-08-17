@@ -18,6 +18,9 @@ try:
 except Exception as e:
     print(f"DB Init failed: {e}")
 
+with open("tracks.json", "r", encoding="utf-8") as f:
+    TRACKS = json.load(f)
+
 # Track user states
 user_state = {}
 user_profiles = {}
@@ -351,6 +354,70 @@ def bot():
         else:
             msg.body("Please reply with 1, 2, or 3.")
         return str(response)
+
+    if state["stage"] == "choose_track":
+        track_map = {
+            "1": "Building Confidence",
+            "2": "Recognizing Red Flags",
+            "3": "Setting Boundaries & Saying No"
+        }
+        selected = track_map.get(incoming_msg)
+        if selected:
+            # Save progress
+            user_profiles[from_number].update({
+                "chosen_track": selected,
+                "current_day": 1,
+                "points": 0,
+                "streak": 0,
+                "waiting_for_answer": True
+            })
+            
+            # Load Day 1 lesson
+            day_data = TRACKS[selected]["days"]["1"]
+            options_text = "\n".join([f"{opt}) {text}" for opt, text in day_data["options"].items()])
+            
+            msg.body(
+                f"🎯 You chose *{selected}*!\n\n"
+                f"📘 Day 1 — {day_data['scenario']}\n\n"
+                f"{options_text}\n\n"
+                "👉 Reply with A, B, or C"
+            )
+            user_state[from_number]["stage"] = "track_active"
+        else:
+            msg.body("Please choose a valid track: 1, 2, or 3.")
+        return str(response)
+
+    if state["stage"] == "track_active":
+        profile = user_profiles.get(from_number, {})
+        track = profile.get("chosen_track")
+        day = str(profile.get("current_day", 1))
+        answer = incoming_msg.strip().upper()
+    
+        if not track or answer not in ["A", "B", "C"]:
+            msg.body("Please reply with A, B, or C.")
+            return str(response)
+    
+        day_data = TRACKS[track]["days"][day]
+        feedback = day_data["feedback"].get(answer, "Thanks for your answer!")
+        
+        # Update points
+        profile["points"] += 10
+        profile["waiting_for_answer"] = False
+    
+        # Send feedback, lesson, challenge
+        msg.body(
+            f"✅ Feedback: {feedback}\n\n"
+            f"📖 Mini Lesson: {day_data['mini_lesson']}\n\n"
+            f"💡 Challenge: {day_data['challenge']}\n\n"
+            f"(You earned +10 points! 🎉 Total: {profile['points']})"
+        )
+        
+        # Prepare for next day
+        profile["current_day"] += 1
+        user_state[from_number]["stage"] = "track_completed_day"
+    
+        return str(response)
+
 
     if state["stage"] == "choose_category":
         category_map = {
