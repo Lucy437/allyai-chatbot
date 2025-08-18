@@ -323,27 +323,28 @@ def bot():
     
     # ✅ Only respond to name once during intro
     if state["stage"] == "intro":
-        if "name" not in user_profiles.get(from_number, {}):
+        profile = get_user_profile(from_number)
+        if not profile or not profile.get("name"):
             name = incoming_msg.title()
-            user_profiles[from_number].update({"name": name})
-            # ✅ Save to Postgres
+            # ✅ Save directly to DB
             create_or_update_user(from_number, name=name)
             user_state[from_number]["stage"] = "choose_path"
             msg.body(
-                    f"Nice to meet you, {name}!\n\nHow can I help you today?\n"
-                    "1. Ask for advice\n"
-                    "2. Take a quick assessment to understand your relationship style\n"
-                    "3. Play 'What Would You Do?'"
-                )
+                f"Nice to meet you, {name}!\n\nHow can I help you today?\n"
+                "1. Ask for advice\n"
+                "2. Take a quick assessment to understand your relationship style\n"
+                "3. Play 'What Would You Do?'"
+            )
         else:
             # Prevent weird behavior if they say "Hi" again
             msg.body(
-                    "Just reply with 1, 2, or 3 to continue:\n"
-                    "1. Ask for advice\n"
-                    "2. Take a quick assessment\n"
-                    "3. Play 'What Would You Do?'"
-                )
+                "Just reply with 1, 2, or 3 to continue:\n"
+                "1. Ask for advice\n"
+                "2. Take a quick assessment\n"
+                "3. Play 'What Would You Do?'"
+            )
         return str(response)
+
 
 
     if state["stage"] == "choose_path":
@@ -410,15 +411,7 @@ def bot():
         }
         selected = track_map.get(incoming_msg)
         if selected and selected in TRACKS and len(TRACKS[selected]) > 0:
-            # Save progress
-            user_profiles[from_number].update({
-                "chosen_track": selected,
-                "current_day": 1,
-                "points": 0,
-                "streak": 0,
-                "waiting_for_answer": True
-            })
-    
+            # ✅ Save progress directly to DB
             create_or_update_user(
                 from_number,
                 chosen_track=selected,
@@ -441,6 +434,7 @@ def bot():
         else:
             msg.body("Please choose a valid track: 1, 2, or 3.")
         return str(response)
+
 
 
     if state["stage"] == "track_progress_options":
@@ -559,21 +553,21 @@ def bot():
         }
         selected = category_map.get(incoming_msg)
         if selected:
-            user_profiles[from_number]["category"] = selected
+            # ✅ Store category in DB
+            create_or_update_user(from_number, category=selected)
             user_state[from_number]["stage"] = "choose_scenario"
-
+    
             options = [s["scenario"] for s in SCENARIOS if s["category"] == selected]
             options.append("Something else — I want to describe my situation in my own words.")
-
+    
             user_state[from_number]["scenario_options"] = options
             option_text = "\n".join([f"{i+1}. {s}" for i, s in enumerate(options)])
             msg.body(f"Thanks! Here are some common situations under *{selected}*:\n\n{option_text}\n\nReply with the number that fits your situation.")
-            log_event(from_number, "category_selected", {
-                        "category": selected
-                    })
+            log_event(from_number, "category_selected", {"category": selected})
         else:
             msg.body("Please choose a valid number from the list above.")
         return str(response)
+
 
     if state["stage"] == "choose_scenario":
         options = user_state[from_number].get("scenario_options", [])
@@ -581,10 +575,11 @@ def bot():
             selected_index = int(incoming_msg) - 1
             if 0 <= selected_index < len(options) - 1:
                 scenario = options[selected_index]
-                user_profiles[from_number]["scenario"] = scenario
+                # ✅ Save scenario in DB
+                create_or_update_user(from_number, scenario=scenario)
                 user_state[from_number]["stage"] = "gpt_mode"
                 log_event(from_number, "scenario_selected", {
-                    "category": user_profiles[from_number].get("category"),
+                    "category": get_user_profile(from_number).get("category"),
                     "scenario": scenario
                 })
                 msg.body("Thanks for sharing that. I’m here for you 💛 Just tell me a bit more about what’s been going on, and we’ll work through it together.")
@@ -597,6 +592,7 @@ def bot():
             print("[ERROR in choose_scenario]", str(e))
             msg.body("Please reply with the number of your choice.")
         return str(response)
+
 
     if state.get("stage") == "assessment" and from_number in user_sessions:
         session = user_sessions[from_number]
