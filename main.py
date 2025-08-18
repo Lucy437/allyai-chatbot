@@ -698,7 +698,7 @@ def bot():
         
         try:
             gpt_response = client.chat.completions.create(
-                model="gpt-5",
+                model="gpt-4",
                 messages=[
                     {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
                     {"role": "user", "content": prompt}
