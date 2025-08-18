@@ -291,7 +291,13 @@ def bot():
         profile = get_user_profile(from_number)
         if profile and profile["name"]:
             # Returning user with a saved name
-            msg.body(f"Hi {profile['name']} 👋 Welcome back! 💛")
+            msg.body(
+                f"Hi {profile['name']} 👋 Welcome back! 💛\n\n"
+                "How can I help you today?\n"
+                "1. Ask for advice\n"
+                "2. Take a quick assessment\n"
+                "3. Play 'What Would You Do?'"
+            )
             user_state[from_number] = {"stage": "choose_path"}
             return str(response)
         else:
@@ -349,11 +355,50 @@ def bot():
             msg.body("Let’s begin! ✨\n\n" + first_q)
             log_event(from_number, "assessment_started", {})
         elif incoming_msg == "3":
-            user_state[from_number]["stage"] = "choose_track"
-            msg.body("🎲 Welcome to *What Would You Do?*\n\nPick a growth path:\n1. Building Confidence\n2. Recognizing Red Flags\n3. Setting Boundaries & Saying No")
+            profile = get_user_profile(from_number)
+            track = profile.get("chosen_track")
+            day = profile.get("current_day", 1)
+            points = profile.get("points", 0)
+            TOTAL_DAYS = 4
+        
+            if track and day > TOTAL_DAYS:
+                # ✅ Finished all lessons
+                msg.body(
+                    f"🎉 You’ve already completed all {TOTAL_DAYS} lessons in *{track}*! 💛\n"
+                    f"Final Score: {points} points 🎯\n\n"
+                    "Back to the main menu:\n"
+                    "1. Ask for advice\n"
+                    "2. Take a quick assessment\n"
+                    "3. Play 'What Would You Do?'"
+                )
+                user_state[from_number]["stage"] = "choose_path"
+        
+            elif track and day <= TOTAL_DAYS:
+                # ✅ Already in progress
+                msg.body(
+                    f"✨ You’re currently on *Day {day}* of the *{track}* track.\n\n"
+                    "What would you like to do?\n"
+                    "1. Continue to your next lesson\n"
+                    "2. Back to main menu"
+                )
+                user_state[from_number]["stage"] = "track_progress_options"
+        
+            else:
+                # ✅ No track chosen yet
+                user_state[from_number]["stage"] = "choose_track"
+                msg.body(
+                    "🎲 Welcome to *What Would You Do?*\n\n"
+                    "Pick a growth path:\n"
+                    "1. Building Confidence\n"
+                    "2. Recognizing Red Flags\n"
+                    "3. Setting Boundaries & Saying No"
+                )
+
+            return str(response)
         else:
             msg.body("Please reply with 1, 2, or 3.")
         return str(response)
+
 
     if state["stage"] == "choose_track":
         track_map = {
@@ -387,36 +432,121 @@ def bot():
             msg.body("Please choose a valid track: 1, 2, or 3.")
         return str(response)
 
-    if state["stage"] == "track_active":
-        profile = user_profiles.get(from_number, {})
+    if state["stage"] == "track_progress_options":
+        profile = get_user_profile(from_number)
         track = profile.get("chosen_track")
-        day = str(profile.get("current_day", 1))
-        answer = incoming_msg.strip().upper()
+        day = profile.get("current_day", 1)
+        points = profile.get("points", 0)
     
-        if not track or answer not in ["A", "B", "C"]:
+        if incoming_msg == "1":  # Go to next lesson
+            TOTAL_DAYS = 4
+            if day <= TOTAL_DAYS:
+                lesson = TRACKS[track][f"day_{day}"]
+    
+                msg.body(
+                    f"📘 Day {day}: {lesson['title']}\n\n"
+                    f"{lesson['scenario']}\n\n"
+                    "A) " + lesson['options']['A'] + "\n"
+                    "B) " + lesson['options']['B'] + "\n"
+                    "C) " + lesson['options']['C'] + "\n\n"
+                    "👉 Reply with A, B, or C"
+                )
+                user_state[from_number]["stage"] = "track_active"
+            else:
+                msg.body(
+                    f"🎉 You’ve already completed all {TOTAL_DAYS} lessons! 💛\n"
+                    f"Final Score: {points} points 🎯\n\n"
+                    "Back to the main menu:\n"
+                    "1. Ask for advice\n"
+                    "2. Take a quick assessment\n"
+                    "3. Play 'What Would You Do?'"
+                )
+                user_state[from_number]["stage"] = "choose_path"
+    
+        elif incoming_msg == "2":  # Back to main menu
+            TOTAL_DAYS = 4
+            if day > TOTAL_DAYS:
+                msg.body(
+                    f"🎉 You’ve already completed all {TOTAL_DAYS} lessons! 💛\n"
+                    f"Final Score: {points} points 🎯\n\n"
+                    "Back to the main menu:\n"
+                    "1. Ask for advice\n"
+                    "2. Take a quick assessment\n"
+                    "3. Play 'What Would You Do?'"
+                )
+            else:
+                msg.body(
+                    "Okay 💛 Sending you back to the main menu!\n\n"
+                    "1. Ask for advice\n"
+                    "2. Take a quick assessment\n"
+                    "3. Play 'What Would You Do?'"
+                )
+            user_state[from_number]["stage"] = "choose_path"
+    
+        else:
+            msg.body("Please reply with 1 or 2.")
+        
+        return str(response)
+
+
+    if state["stage"] == "track_active":
+        profile = get_user_profile(from_number)
+        track = profile.get("chosen_track")
+        day = profile.get("current_day", 1)
+        points = profile.get("points", 0)
+    
+        # Fetch the lesson
+        lesson = TRACKS[track][f"day_{day}"]
+    
+        choice = incoming_msg.strip().upper()
+        if choice not in ["A", "B", "C"]:
             msg.body("Please reply with A, B, or C.")
             return str(response)
     
-        day_data = TRACKS[track]["days"][day]
-        feedback = day_data["feedback"].get(answer, "Thanks for your answer!")
-        
-        # Update points
-        profile["points"] += 10
-        profile["waiting_for_answer"] = False
+        # Award points for completing scenario
+        points += 10
     
-        # Send feedback, lesson, challenge
+        # Get feedback
+        feedback = lesson["feedback"][choice]
+    
+        # Send feedback + mini lesson + challenge
         msg.body(
-            f"✅ Feedback: {feedback}\n\n"
-            f"📖 Mini Lesson: {day_data['mini_lesson']}\n\n"
-            f"💡 Challenge: {day_data['challenge']}\n\n"
-            f"(You earned +10 points! 🎉 Total: {profile['points']})"
+            f"💡 Feedback:\n{feedback}\n\n"
+            f"📘 Mini Lesson:\n{lesson['mini_lesson']}\n\n"
+            f"🔥 Challenge:\n{lesson['challenge']}\n\n"
+            f"🏆 You earned +10 points! (Total: {points})"
         )
-        
-        # Prepare for next day
-        profile["current_day"] += 1
-        user_state[from_number]["stage"] = "track_completed_day"
+    
+        # Update progress in DB
+        next_day = day + 1
+        create_or_update_user(
+            from_number,
+            current_day=next_day,
+            points=points
+        )
+    
+        # Check if lessons are left
+        TOTAL_DAYS = 4
+        if next_day <= TOTAL_DAYS:
+            msg.body(
+                "\n✨ What would you like to do?\n"
+                "1. Go to the next lesson\n"
+                "2. Back to the main menu"
+            )
+            user_state[from_number]["stage"] = "track_progress_options"
+        else:
+            msg.body(
+                f"🎉 Congratulations! You’ve completed all lessons in this track! 💛\n"
+                f"Final Score: {points} points 🎯\n\n"
+                "Back to the main menu:\n"
+                "1. Ask for advice\n"
+                "2. Take a quick assessment\n"
+                "3. Play 'What Would You Do?'"
+            )
+            user_state[from_number]["stage"] = "choose_path"
     
         return str(response)
+
 
 
     if state["stage"] == "choose_category":
