@@ -441,7 +441,7 @@ def bot():
         if incoming_msg == "1":  # Go to next lesson
             TOTAL_DAYS = 4
             if day <= TOTAL_DAYS:
-                lesson = TRACKS[track][f"day_{day}"]
+                lesson = TRACKS[track][day-1]
     
                 msg.body(
                     f"📘 Day {day}: {lesson['title']}\n\n"
@@ -496,7 +496,7 @@ def bot():
         points = profile.get("points", 0)
     
         # Fetch the lesson
-        lesson = TRACKS[track][f"day_{day}"]
+        lesson = TRACKS[track][day-1]
     
         choice = incoming_msg.strip().upper()
         if choice not in ["A", "B", "C"]:
