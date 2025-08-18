@@ -407,7 +407,7 @@ def bot():
             "3": "Setting Boundaries & Saying No"
         }
         selected = track_map.get(incoming_msg)
-        if selected:
+        if selected and selected in TRACKS and len(TRACKS[selected]) > 0:
             # Save progress
             user_profiles[from_number].update({
                 "chosen_track": selected,
@@ -416,7 +416,7 @@ def bot():
                 "streak": 0,
                 "waiting_for_answer": True
             })
-
+    
             create_or_update_user(
                 from_number,
                 chosen_track=selected,
@@ -424,11 +424,11 @@ def bot():
                 points=0,
                 streak=0
             )
-            
+    
             # Load Day 1 lesson
             day_data = TRACKS[selected][0]
             options_text = "\n".join([f"{opt}) {text}" for opt, text in day_data["options"].items()])
-            
+    
             msg.body(
                 f"🎯 You chose *{selected}*!\n\n"
                 f"📘 Day 1 — {day_data['scenario']}\n\n"
@@ -439,6 +439,7 @@ def bot():
         else:
             msg.body("Please choose a valid track: 1, 2, or 3.")
         return str(response)
+
 
     if state["stage"] == "track_progress_options":
         profile = get_user_profile(from_number)
