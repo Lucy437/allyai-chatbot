@@ -18,8 +18,10 @@ try:
 except Exception as e:
     print(f"DB Init failed: {e}")
 
-with open("tracks.json", "r", encoding="utf-8") as f:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(BASE_DIR, "tracks.json"), "r", encoding="utf-8") as f:
     TRACKS = json.load(f)
+print(TRACKS.keys())
 
 # Track user states
 user_state = {}
