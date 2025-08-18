@@ -416,9 +416,17 @@ def bot():
                 "streak": 0,
                 "waiting_for_answer": True
             })
+
+            create_or_update_user(
+                from_number,
+                chosen_track=selected,
+                current_day=1,
+                points=0,
+                streak=0
+            )
             
             # Load Day 1 lesson
-            day_data = TRACKS[selected]["days"]["1"]
+            day_data = TRACKS[selected][0]
             options_text = "\n".join([f"{opt}) {text}" for opt, text in day_data["options"].items()])
             
             msg.body(
@@ -442,13 +450,14 @@ def bot():
             TOTAL_DAYS = 4
             if day <= TOTAL_DAYS:
                 lesson = TRACKS[track][day-1]
+                title = lesson.get("title", lesson["scenario"])
     
                 msg.body(
-                    f"📘 Day {day}: {lesson['title']}\n\n"
+                    f"📘 Day {day}: {title}\n\n"
                     f"{lesson['scenario']}\n\n"
-                    "A) " + lesson['options']['A'] + "\n"
-                    "B) " + lesson['options']['B'] + "\n"
-                    "C) " + lesson['options']['C'] + "\n\n"
+                    f"A) {lesson['options']['A']}\n"
+                    f"B) {lesson['options']['B']}\n"
+                    f"C) {lesson['options']['C']}\n\n"
                     "👉 Reply with A, B, or C"
                 )
                 user_state[from_number]["stage"] = "track_active"
@@ -464,31 +473,20 @@ def bot():
                 user_state[from_number]["stage"] = "choose_path"
     
         elif incoming_msg == "2":  # Back to main menu
-            TOTAL_DAYS = 4
-            if day > TOTAL_DAYS:
-                msg.body(
-                    f"🎉 You’ve already completed all {TOTAL_DAYS} lessons! 💛\n"
-                    f"Final Score: {points} points 🎯\n\n"
-                    "Back to the main menu:\n"
-                    "1. Ask for advice\n"
-                    "2. Take a quick assessment\n"
-                    "3. Play 'What Would You Do?'"
-                )
-            else:
-                msg.body(
-                    "Okay 💛 Sending you back to the main menu!\n\n"
-                    "1. Ask for advice\n"
-                    "2. Take a quick assessment\n"
-                    "3. Play 'What Would You Do?'"
-                )
+            msg.body(
+                "Okay 💛 Sending you back to the main menu!\n\n"
+                "1. Ask for advice\n"
+                "2. Take a quick assessment\n"
+                "3. Play 'What Would You Do?'"
+            )
             user_state[from_number]["stage"] = "choose_path"
     
         else:
             msg.body("Please reply with 1 or 2.")
-        
+    
         return str(response)
-
-
+    
+    
     if state["stage"] == "track_active":
         profile = get_user_profile(from_number)
         track = profile.get("chosen_track")
@@ -503,41 +501,38 @@ def bot():
             msg.body("Please reply with A, B, or C.")
             return str(response)
     
-        # Award points for completing scenario
+        # Award points
         points += 10
-    
-        # Get feedback
         feedback = lesson["feedback"][choice]
     
-        # Send feedback + mini lesson + challenge
-        msg.body(
-            f"💡 Feedback:\n{feedback}\n\n"
-            f"📘 Mini Lesson:\n{lesson['mini_lesson']}\n\n"
-            f"🔥 Challenge:\n{lesson['challenge']}\n\n"
-            f"🏆 You earned +10 points! (Total: {points})"
-        )
-    
-        # Update progress in DB
+        # Update DB progress
         next_day = day + 1
         create_or_update_user(
             from_number,
+            chosen_track=track,
             current_day=next_day,
             points=points
         )
     
-        # Check if lessons are left
         TOTAL_DAYS = 4
         if next_day <= TOTAL_DAYS:
             msg.body(
-                "\n✨ What would you like to do?\n"
+                f"💡 Feedback:\n{feedback}\n\n"
+                f"📘 Mini Lesson:\n{lesson['mini_lesson']}\n\n"
+                f"🔥 Challenge:\n{lesson['challenge']}\n\n"
+                f"🏆 You earned +10 points! (Total: {points})\n\n"
+                "✨ What would you like to do?\n"
                 "1. Go to the next lesson\n"
                 "2. Back to the main menu"
             )
             user_state[from_number]["stage"] = "track_progress_options"
         else:
             msg.body(
-                f"🎉 Congratulations! You’ve completed all lessons in this track! 💛\n"
-                f"Final Score: {points} points 🎯\n\n"
+                f"💡 Feedback:\n{feedback}\n\n"
+                f"📘 Mini Lesson:\n{lesson['mini_lesson']}\n\n"
+                f"🔥 Challenge:\n{lesson['challenge']}\n\n"
+                f"🏆 You earned +10 points! (Final: {points})\n\n"
+                f"🎉 Congratulations! You’ve completed all lessons in this track! 💛\n\n"
                 "Back to the main menu:\n"
                 "1. Ask for advice\n"
                 "2. Take a quick assessment\n"
@@ -546,6 +541,7 @@ def bot():
             user_state[from_number]["stage"] = "choose_path"
     
         return str(response)
+
 
 
 
