@@ -539,9 +539,6 @@ def bot():
     
         return str(response)
 
-
-
-
     if state["stage"] == "choose_category":
         category_map = {
             "1": "Romantic Partner Issues",
@@ -553,8 +550,9 @@ def bot():
         }
         selected = category_map.get(incoming_msg)
         if selected:
-            # ✅ Store category in DB
-            create_or_update_user(from_number, category=selected)
+            # ✅ only save in memory, don’t push to DB
+            user_state[from_number]["category"] = selected
+    
             user_state[from_number]["stage"] = "choose_scenario"
     
             options = [s["scenario"] for s in SCENARIOS if s["category"] == selected]
@@ -562,7 +560,11 @@ def bot():
     
             user_state[from_number]["scenario_options"] = options
             option_text = "\n".join([f"{i+1}. {s}" for i, s in enumerate(options)])
-            msg.body(f"Thanks! Here are some common situations under *{selected}*:\n\n{option_text}\n\nReply with the number that fits your situation.")
+            msg.body(
+                f"Thanks! Here are some common situations under *{selected}*:\n\n"
+                f"{option_text}\n\n"
+                "Reply with the number that fits your situation."
+            )
             log_event(from_number, "category_selected", {"category": selected})
         else:
             msg.body("Please choose a valid number from the list above.")
