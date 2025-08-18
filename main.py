@@ -634,7 +634,7 @@ def bot():
 
 
     if state["stage"] in ["gpt_mode", "gpt_mode_custom"]:
-        scenario = user_profiles.get(from_number, {}).get("scenario", "").strip()
+        scenario = user_state[from_number].get("scenario", "").strip()
         user_input = incoming_msg.strip()
     
         if state["stage"] == "gpt_mode_custom":
