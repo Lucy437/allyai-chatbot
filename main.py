@@ -21,7 +21,6 @@ except Exception as e:
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(BASE_DIR, "tracks.json"), "r", encoding="utf-8") as f:
     TRACKS = json.load(f)
-print(TRACKS.keys())
 
 # Track user states
 user_state = {}
@@ -577,13 +576,16 @@ def bot():
             selected_index = int(incoming_msg) - 1
             if 0 <= selected_index < len(options) - 1:
                 scenario = options[selected_index]
-                # ✅ Save scenario in DB
-                create_or_update_user(from_number, scenario=scenario)
+    
+                # ✅ Save only in memory, not DB
+                user_state[from_number]["scenario"] = scenario
                 user_state[from_number]["stage"] = "gpt_mode"
+    
                 log_event(from_number, "scenario_selected", {
-                    "category": get_user_profile(from_number).get("category"),
+                    "category": user_state[from_number].get("category"),
                     "scenario": scenario
                 })
+    
                 msg.body("Thanks for sharing that. I’m here for you 💛 Just tell me a bit more about what’s been going on, and we’ll work through it together.")
             elif selected_index == len(options) - 1:
                 user_state[from_number]["stage"] = "gpt_mode_custom"
@@ -594,6 +596,7 @@ def bot():
             print("[ERROR in choose_scenario]", str(e))
             msg.body("Please reply with the number of your choice.")
         return str(response)
+
 
 
     if state.get("stage") == "assessment" and from_number in user_sessions:
