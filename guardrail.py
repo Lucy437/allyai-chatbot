@@ -12,7 +12,7 @@ twilio_client = TwilioClient(
     os.getenv("TWILIO_AUTH_TOKEN")
 )
 
-TWILIO_NUMBER = "whatsapp:+18335661105"  # replace with your Twilio number
+TWILIO_NUMBER = "whatsapp:+14155238886"  # replace with your Twilio number whatsapp:+ 18335661105
 
 GUARDRAIL_SYSTEM_PROMPT = """
 You are AllyAI’s Safety Guardrail Agent.
