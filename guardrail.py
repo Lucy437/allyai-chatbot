@@ -1,6 +1,7 @@
 # guardrail.py
 import os
 import asyncio
+import threading
 from openai import AsyncOpenAI
 from twilio.rest import Client as TwilioClient
 
@@ -44,7 +45,7 @@ async def classify_message_async(history, new_input):
     return resp.choices[0].message.content.strip().upper()
 
 def launch_guardrail_check(user_id, history, user_input):
-    """Launch guardrail check asynchronously without blocking main flow"""
+    """Run guardrail in a background thread so it never blocks Flask"""
 
     async def runner():
         classification = await classify_message_async(history, user_input)
@@ -70,4 +71,7 @@ def launch_guardrail_check(user_id, history, user_input):
                 to=user_id
             )
 
-    asyncio.create_task(runner())
+    def run_in_thread():
+        asyncio.run(runner())
+
+    threading.Thread(target=run_in_thread, daemon=True).start()
