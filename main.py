@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from twilio.twiml.messaging_response import MessagingResponse
+from guardrail import launch_guardrail_check
 from flask_cors import CORS
 import openai
 from openai import OpenAI
@@ -719,6 +720,13 @@ def bot():
             print("[ERROR in GPT fallback]", str(e))
             msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
         
+        # ✅ Launch guardrail check in background
+        history = user_state[from_number].get("history", [])
+        history.append(f"User: {user_input}")
+        user_state[from_number]["history"] = history
+    
+        launch_guardrail_check(from_number, history, user_input)
+
         return str(response)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # fallback to 5000 if running locally
