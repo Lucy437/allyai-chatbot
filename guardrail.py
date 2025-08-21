@@ -1,8 +1,17 @@
 # guardrail.py
+import os
 import asyncio
 from openai import AsyncOpenAI
+from twilio.rest import Client as TwilioClient
 
+# Init async OpenAI + Twilio clients
 client = AsyncOpenAI()
+twilio_client = TwilioClient(
+    os.getenv("TWILIO_SID"),
+    os.getenv("TWILIO_AUTH_TOKEN")
+)
+
+TWILIO_NUMBER = "whatsapp:+14155238886"  # replace with your Twilio number
 
 GUARDRAIL_SYSTEM_PROMPT = """
 You are AllyAI’s Safety Guardrail Agent.
@@ -14,6 +23,7 @@ SAFE / DISTRESS / CRISIS
 """
 
 async def classify_message_async(history, new_input):
+    """Classify message into SAFE / DISTRESS / CRISIS using LLM"""
     prompt = f"""
     Conversation so far:
     {history}
@@ -32,3 +42,32 @@ async def classify_message_async(history, new_input):
         temperature=0
     )
     return resp.choices[0].message.content.strip().upper()
+
+def launch_guardrail_check(user_id, history, user_input):
+    """Launch guardrail check asynchronously without blocking main flow"""
+
+    async def runner():
+        classification = await classify_message_async(history, user_input)
+
+        if classification == "CRISIS":
+            twilio_client.messages.create(
+                body=(
+                    "💛 I hear how heavy this feels. Please know you’re not alone.\n\n"
+                    "📞 If you’re in danger or thinking of hurting yourself, "
+                    "call your local hotline or visit https://findahelpline.com"
+                ),
+                from_=TWILIO_NUMBER,
+                to=user_id
+            )
+
+        elif classification == "DISTRESS":
+            twilio_client.messages.create(
+                body=(
+                    "💛 I hear you’re going through something tough. "
+                    "Remember you can always reach out to real people if it feels overwhelming."
+                ),
+                from_=TWILIO_NUMBER,
+                to=user_id
+            )
+
+    asyncio.create_task(runner())
