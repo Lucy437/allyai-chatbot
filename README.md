@@ -49,41 +49,6 @@ This project is designed for social impact and is aligned with UNICEF’s goals 
 
 ## 🚀 Quick Start  
 
-### 1. Clone Repo
-```bash
-git clone https://github.com/your-org/allyai.git
-cd allyai
-```
-
-### 2. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Setup Environment Variables  
-In **Render Dashboard** (or `.env` locally), configure:  
-
-```
-OPENAI_API_KEY=sk-...
-TWILIO_SID=ACxxxx...
-TWILIO_AUTH_TOKEN=your_auth_token
-```
-
-### 4. Run Locally
-```bash
-python main.py
-```
-
-Expose webhook with [ngrok](https://ngrok.com):  
-```bash
-ngrok http 5000
-```
-
-Point Twilio Sandbox **Webhook URL** to:  
-```
-https://<your-ngrok-url>/bot
-```
-
 ### 5. Connect via WhatsApp  
 - Send `join deal-chest` to **+1 415 523 8886** (Twilio sandbox).  
 - Then message your bot 🎉  
@@ -111,15 +76,6 @@ https://<your-ngrok-url>/bot
 - **Safety**: Detects distress early and connects youth to *human* support networks.  
 - **Scalable**: Built on WhatsApp, already widely accessible to young women globally.  
 - **Ethical AI**: Warm, non-judgmental design; explicit crisis guardrails; minimal data collection.  
-
----
-
-## 📊 For UNICEF Evaluation  
-
-- **Innovation**: Combines coaching + gamification + AI guardrails.  
-- **Protection**: Real-time crisis detection + referral to professional help.  
-- **Measurability**: Analytics pipeline logs user growth and safety triggers.  
-- **Scalability**: Deployable on WhatsApp globally, adaptable for multiple languages.  
 
 ---
 
