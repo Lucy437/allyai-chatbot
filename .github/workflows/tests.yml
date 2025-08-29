@@ -19,6 +19,9 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
       - name: Run tests (with collection output)
+        env:
+          PYTHONPATH: .
+          OPENAI_API_KEY: "test"   # <-- dummy value so import of guardrail.py succeeds
         run: |
           pytest -q --maxfail=1 --disable-warnings -vv
           echo "--- pytest collection ---"
