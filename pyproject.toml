@@ -15,3 +15,17 @@ dependencies = [
   "psycopg2-binary", # if using Postgres
   "gunicorn",
 ]
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# Relax a couple rules so the repo passes without big edits
+ignore = [
+  "E501",  # long lines
+  "E402",  # imports not at top (your tests add sys.path)
+]
+# If you want Ruff to also auto-fix simple issues locally:
+fix = true
