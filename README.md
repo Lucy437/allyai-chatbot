@@ -1,5 +1,6 @@
 ## Status
 
+![E2E (Render)](https://github.com/Lucy437/allyai-chatbot/actions/workflows/e2e.yml/badge.svg)
 ![Tests](https://github.com/Lucy437/allyai-chatbot/actions/workflows/tests.yml/badge.svg)
 ![CI](https://github.com/Lucy437/allyai-chatbot/actions/workflows/ci.yml/badge.svg)
 
