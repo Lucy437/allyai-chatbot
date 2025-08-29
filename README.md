@@ -1,9 +1,8 @@
+## Status
 
 ![Tests](https://github.com/Lucy437/allyai-chatbot/actions/workflows/tests.yml/badge.svg)
+![CI](https://github.com/Lucy437/allyai-chatbot/actions/workflows/ci.yml/badge.svg)
 
-![Lint](https://github.com/Lucy437/allyai-chatbot/actions/workflows/lint.yml/badge.svg)
-
-![Autoformat](https://github.com/Lucy437/allyai-chatbot/actions/workflows/autoformat.yml/badge.svg)
 
 
 # 📘 AllyAI – Empowering Young Women with AI Coaching  
