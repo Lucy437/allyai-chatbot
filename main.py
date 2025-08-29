@@ -50,6 +50,7 @@ user_sessions = {}
 # OpenAI client
 client = OpenAI()
 
+
 # health route
 @app.route("/health", methods=["GET"])
 def health():
