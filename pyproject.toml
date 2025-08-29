@@ -1,7 +1,16 @@
 [project]
-name = "python-template"
+name = "allyai-chatbot"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "AllyAI: WhatsApp-based relationship & confidence coach powered by GPT and Twilio."
+authors = [
+  { name="Lucy Stepanyan", email="lucystepanyan7@gmail.com" }
+]
 requires-python = ">=3.11"
-dependencies = []
+
+dependencies = [
+  "flask",
+  "flask-cors",
+  "twilio",
+  "openai",
+  "psycopg2-binary", # if using Postgres
+]
