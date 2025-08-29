@@ -1,18 +1,37 @@
-from flask import Flask, request, jsonify
+# main.py
+from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
 from guardrail import launch_guardrail_check
 from flask_cors import CORS
-import openai
 from openai import OpenAI
-from analytics import init_db, log_event,create_or_update_user, get_user_profile
+from analytics import init_db, log_event, create_or_update_user, get_user_profile
 import os
-import json 
+import json
+
+# --- Imports from helpers and assessment (moved out of this file) ---
+from helpers import (
+    ALLYAI_SYSTEM_PROMPT,
+    is_relevant,
+    update_user_step,
+    generate_prompt,
+    detect_intent,
+)
+from assessment import (
+    assessment_questions,
+    get_next_assessment_question,
+    handle_assessment_answer,
+    calculate_trait_scores,
+    assign_identity,
+    generate_feedback,
+)
+
 # Load all scenario scripts from JSON
 with open("scenarios.json", "r", encoding="utf-8") as f:
     SCENARIOS = json.load(f)
 
 app = Flask(__name__)
 CORS(app)
+
 # Initialize DB (only once when app starts)
 try:
     init_db()
@@ -28,247 +47,33 @@ user_state = {}
 user_profiles = {}
 user_sessions = {}
 
-# OpenAI API Key
-# openai.api_key = os.getenv("OPENAI_API_KEY")
+# OpenAI client
 client = OpenAI()
 
-# ------------------------- AllyAI System Prompt ------------------------- #
-ALLYAI_SYSTEM_PROMPT = """
-You are AllyAI — a warm, emotionally intelligent coach supporting girls aged 15–25 with relationships, confidence, and mental health.
-
-Speak like a caring older sister or therapist-coach hybrid. Be warm, validating, and empowering. Use short, natural messages — no lectures, no long paragraphs.
-
-Always prioritize emotional safety and empowerment. Never sound robotic or formal.
-"""
-# ------------------------- Assessment Setup ------------------------- #
-assessment_questions = [
-    {
-        "id": 1,
-        "text": "You just got invited to speak briefly at your school or group meeting about a topic you’re passionate about. What’s your first reaction?",
-        "dimension": "Confidence",
-        "options": {
-            "a": "I'm not good at public speaking. I’ll just pass.",
-            "b": "I could do it if I have time to prepare, but I’m not sure I’ll be taken seriously.",
-            "c": "I’ll try! Even if it’s not perfect, it’s a good learning experience.",
-            "d": "Absolutely! I love speaking up and sharing my thoughts."
-        },
-        "scores": {"a": 1, "b": 2, "c": 3, "d": 4}
-    },
-    {
-        "id": 2,
-        "text": "Your friend is upset because she feels left out after you spent more time with another group. She brings it up to you. How do you respond?",
-        "dimension": "Empathy",
-        "options": {
-            "a": "Ugh, I didn’t do anything wrong — she’s overreacting.",
-            "b": "I say sorry quickly, just to end the drama.",
-            "c": "I try to understand where she’s coming from and talk it through.",
-            "d": "I ask her more about how she feels and tell her I want us both to feel included."
-        },
-        "scores": {"a": 1, "b": 2, "c": 3, "d": 4}
-    },
-    {
-        "id": 3,
-        "text": "After a fight with someone close to you, how do you usually reflect on it?",
-        "dimension": "Self-Awareness",
-        "options": {
-            "a": "I don’t really think about it — I move on fast.",
-            "b": "I overthink it for days and wonder what they must think of me.",
-            "c": "I try to look at what triggered me and how I reacted.",
-            "d": "I notice my emotions, patterns, and talk to someone to get perspective."
-        },
-        "scores": {"a": 1, "b": 2, "c": 3, "d": 4}
-    },
-    {
-        "id": 4,
-        "text": "You’re dating someone who often makes jokes at your expense in front of others. How do you respond?",
-        "dimension": "Self-Respect",
-        "options": {
-            "a": "It’s not a big deal — I laugh along to keep things cool.",
-            "b": "It hurts, but I stay quiet and try to ignore it.",
-            "c": "I bring it up later and say it made me uncomfortable.",
-            "d": "I call it out calmly in the moment and let them know it’s not okay."
-        },
-        "scores": {"a": 1, "b": 2, "c": 3, "d": 4}
-    },
-    {
-        "id": 5,
-        "text": "A classmate or coworker takes credit for your idea in a group project. What do you do?",
-        "dimension": "Communication",
-        "options": {
-            "a": "I keep quiet — I don’t want to seem rude or jealous.",
-            "b": "I hint that it was actually my idea, hoping others notice.",
-            "c": "I talk to them one-on-one and explain how it made me feel.",
-            "d": "I address it respectfully in front of the group to clarify."
-        },
-        "scores": {"a": 1, "b": 2, "c": 3, "d": 4}
-    },
-    {
-        "id": 6,
-        "text": "A friend constantly calls late at night to vent, even when you’ve told them you’re tired or studying. What do you do?",
-        "dimension": "Boundary-Setting",
-        "options": {
-            "a": "I always pick up — they need me.",
-            "b": "I ignore the call but feel guilty after.",
-            "c": "I let them know I care, but can’t talk at night anymore.",
-            "d": "I set a firm boundary and suggest specific times to talk instead."
-        },
-        "scores": {"a": 1, "b": 2, "c": 3, "d": 4}
-    }
-]
-def is_relevant(text):
-    return len(text.strip()) > 5
-    
-def update_user_step(user_id):
-    if user_id not in user_state:
-        user_state[user_id] = {"current_step": "validation_exploration"}
-    current = user_state[user_id].get("current_step", "")
-    next_step_map = {
-        "validation_exploration": "psychoeducation",
-        "psychoeducation": "empowerment",
-        "empowerment": "offer_message_help",
-        "offer_message_help": "closing",
-        "closing": "closing"
-    }
-    user_state[user_id]["current_step"] = next_step_map.get(current, "closing")
-
-def get_next_assessment_question(user_id):
-    session = user_sessions[user_id]
-    q_index = session["current_q"]
-    if q_index < len(assessment_questions):
-        q = assessment_questions[q_index]
-        options_text = "\n".join([f"{opt.upper()}. {text}" for opt, text in q["options"].items()])
-        return f"{q['text']}\n\n{options_text}"
-    return None
-
-def handle_assessment_answer(user_id, answer_letter):
-    session = user_sessions[user_id]
-    q_index = session["current_q"]
-    q = assessment_questions[q_index]
-    answer_letter = answer_letter.strip().lower()[0]
-    score = q["scores"].get(answer_letter, 0)
-    session["answers"].append({"dimension": q["dimension"], "score": score})
-    session["current_q"] += 1
-
-def calculate_trait_scores(answers):
-    scores = {}
-    for a in answers:
-        scores[a["dimension"]] = scores.get(a["dimension"], 0) + a["score"]
-    return scores
-
-def assign_identity(scores):
-    top_two = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:2]
-    combo = frozenset([t[0] for t in top_two])
-    identity_map = {
-        frozenset(["Confidence", "Communication"]): "👑 The Empowered Queen\nYou own your voice and lead with unapologetic strength. When you speak, people listen. You turn your truth into action and your presence into power.",
-        frozenset(["Self-Awareness", "Empathy"]): "🪞 The Healer Oracle\nYou see into the hearts of others and the depths of your own soul. Your empathy is matched only by your inner wisdom — a powerful combo that brings light to the darkest places.",
-        frozenset(["Boundary-Setting", "Self-Respect"]): "🛡️ The Guardian Queen\nYou are the sovereign of your space. With grace and steel, you defend your peace, protect your heart, and teach others what it means to honor you.",
-    }
-    return identity_map.get(combo, "👑 The Growth Queen\nYou're on a beautiful path of self-discovery. You’re growing in multiple areas and becoming more aware of your inner power. Keep showing up — your transformation is already happening.")
-
-def generate_feedback(scores, identity):
-    bars = "\n".join([f"{trait}: {int(score * 25)}%" for trait, score in scores.items()])
-    weakest_trait = min(scores, key=scores.get)
-    return (
-        f"🌟 Your AllyAI Identity:\n{identity}\n\n"
-        f"Here’s your growth profile:\n{bars}\n\n"
-        f"You’re strongest in {max(scores, key=scores.get)}.\n"
-        f"But we’ll also work on your {weakest_trait} — because that’s how you become unstoppable 💫"
-    )
-def generate_prompt(current_step, scenario, user_input):
-    if current_step == "validation_exploration":
-        return f"""
-                You are AllyAI — a warm, emotionally intelligent coach speaking like a supportive big sister.
-                
-                Situation: {scenario}
-                User said: {user_input}
-                
-                TASK:
-                - Validate the user's feelings warmly and naturally.
-                - Reflect the emotions you hear (without overanalyzing).
-                - Ask one short, caring follow-up question.
-                - Keep it short (2–4 sentences), warm, and human.
-                """
-    elif current_step == "psychoeducation":
-        return f"""
-                You are AllyAI — a warm, emotionally intelligent coach speaking like a supportive big sister.
-                
-                Situation: {scenario}
-                User said: {user_input}
-                
-                TASK:
-                - Gently explain a relatable emotional pattern linked to the user's situation (e.g., anxious attachment, boundaries).
-                - Be non-academic, supportive, easy to understand.
-                - End by asking a short follow-up question to keep the conversation going.
-                - Keep it brief (2–4 sentences).
-                """
-
-    elif current_step == "empowerment":
-        return f"""
-                You are AllyAI — a warm, emotionally intelligent coach speaking like a supportive big sister.
-                
-                Situation: {scenario}
-                User said: {user_input}
-                
-                TASK:
-                - Affirm the user's worth and normalize their feelings.
-                - Offer a positive reframe or empowering thought.
-                - End by inviting gentle reflection ("How does that feel to you?").
-                - Keep it short, tender, motivating.
-                """
-    elif current_step == "offer_message_help":
-        return f"""
-                You are AllyAI — a warm, emotionally intelligent coach speaking like a supportive big sister.
-                
-                Situation: {scenario}
-                User said: {user_input}
-                
-                TASK:
-                - Offer to help the user craft a short message, boundary, or plan.
-                - Encourage and reassure them.
-                - Be very practical, brief, and warm.
-                """
-    elif current_step == "closing":
-        return f"""
-                You are AllyAI — a warm, emotionally intelligent coach speaking like a supportive big sister.
-                
-                Situation: {scenario}
-                User said: {user_input}
-                
-                TASK:
-                - Thank the user warmly for opening up.
-                - Affirm their strength and growth.
-                - Close with a short encouragement to return anytime.
-                """
-    else:
-        return f"""
-                You are AllyAI — a warm, emotionally intelligent coach speaking like a supportive big sister.
-                
-                Respond warmly and naturally to what the user said: {user_input}.
-                """        
 # WhatsApp bot route
 @app.route("/bot", methods=["POST"])
 def bot():
     from_number = request.values.get("From")
     incoming_msg = request.values.get("Body", "").strip()
     log_event(from_number, "message_received", {
-    "input": incoming_msg,
-    "stage": user_state.get(from_number, {}).get("stage", "unknown")
+        "input": incoming_msg,
+        "stage": user_state.get(from_number, {}).get("stage", "unknown")
     })
-    
+
     response = MessagingResponse()
     msg = response.message()
-    
+
     # ✅ Restart handling
     if incoming_msg.lower() == "restart":
         log_event(from_number, "user_restarted", {})
-        
+
         # Reset in-memory state
         user_state[from_number] = {"stage": "choose_path"}
         user_sessions.pop(from_number, None)  # clear any unfinished assessments
-        
+
         # Fetch saved name from DB
         profile = get_user_profile(from_number)
-        if profile and profile["name"]:
+        if profile and profile.get("name"):
             msg.body(
                 f"Hi {profile['name']} 👋 Starting fresh!\n\n"
                 "How can I help you today?\n"
@@ -278,20 +83,19 @@ def bot():
             )
         else:
             msg.body("Let's start over. 👋 What’s your name?")
-        
+
         return str(response)
 
-        
     print(f"📲 from_number = {from_number}")
     print(f"📥 incoming_msg = {incoming_msg}")
 
     if not from_number or from_number.strip() == "":
         msg.body("Oops — I couldn’t detect your phone number. Try again later.")
         return str(response)
-    
+
     if from_number not in user_state:
         profile = get_user_profile(from_number)
-        if profile and profile["name"]:
+        if profile and profile.get("name"):
             # Returning user with a saved name
             msg.body(
                 f"Hi {profile['name']} 👋 Welcome back! 💛\n\n"
@@ -311,16 +115,14 @@ def bot():
             msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
             return str(response)
 
-
-    
     # ✅ Fallback if stage is missing
     if "stage" not in user_state[from_number]:
         user_state[from_number]["stage"] = "intro"
         msg.body("Hi, I'm Ally 👋\nWhat’s your name?")
         return str(response)
-    
+
     state = user_state[from_number]
-    
+
     # ✅ Only respond to name once during intro
     if state["stage"] == "intro":
         profile = get_user_profile(from_number)
@@ -345,8 +147,6 @@ def bot():
             )
         return str(response)
 
-
-
     if state["stage"] == "choose_path":
         if incoming_msg == "1":
             user_state[from_number]["stage"] = "choose_category"
@@ -354,7 +154,7 @@ def bot():
         elif incoming_msg == "2":
             user_sessions[from_number] = {"current_q": 0, "answers": []}
             user_state[from_number]["stage"] = "assessment"
-            first_q = get_next_assessment_question(from_number)
+            first_q = get_next_assessment_question(user_sessions, from_number)
             msg.body("Let’s begin! ✨\n\n" + first_q)
             log_event(from_number, "assessment_started", {})
         elif incoming_msg == "3":
@@ -363,7 +163,7 @@ def bot():
             day = profile.get("current_day", 1)
             points = profile.get("points", 0)
             TOTAL_DAYS = 4
-        
+
             if track and day > TOTAL_DAYS:
                 # ✅ Finished all lessons
                 msg.body(
@@ -375,7 +175,7 @@ def bot():
                     "3. Play 'What Would You Do?'"
                 )
                 user_state[from_number]["stage"] = "choose_path"
-        
+
             elif track and day <= TOTAL_DAYS:
                 # ✅ Already in progress
                 msg.body(
@@ -385,7 +185,7 @@ def bot():
                     "2. Back to main menu"
                 )
                 user_state[from_number]["stage"] = "track_progress_options"
-        
+
             else:
                 # ✅ No track chosen yet
                 user_state[from_number]["stage"] = "choose_track"
@@ -401,7 +201,6 @@ def bot():
         else:
             msg.body("Please reply with 1, 2, or 3.")
         return str(response)
-
 
     if state["stage"] == "choose_track":
         track_map = {
@@ -419,11 +218,11 @@ def bot():
                 points=0,
                 streak=0
             )
-    
+
             # Load Day 1 lesson
             day_data = TRACKS[selected][0]
             options_text = "\n".join([f"{opt}) {text}" for opt, text in day_data["options"].items()])
-    
+
             msg.body(
                 f"🎯 You chose *{selected}*!\n\n"
                 f"📘 Day 1 — {day_data['scenario']}\n\n"
@@ -435,20 +234,18 @@ def bot():
             msg.body("Please choose a valid track: 1, 2, or 3.")
         return str(response)
 
-
-
     if state["stage"] == "track_progress_options":
         profile = get_user_profile(from_number)
         track = profile.get("chosen_track")
         day = profile.get("current_day", 1)
         points = profile.get("points", 0)
-    
+
         if incoming_msg == "1":  # Go to next lesson
             TOTAL_DAYS = 4
             if day <= TOTAL_DAYS:
                 lesson = TRACKS[track][day-1]
                 title = lesson.get("title", lesson["scenario"])
-    
+
                 msg.body(
                     f"📘 Day {day}: {title}\n\n"
                     f"{lesson['scenario']}\n\n"
@@ -468,7 +265,7 @@ def bot():
                     "3. Play 'What Would You Do?'"
                 )
                 user_state[from_number]["stage"] = "choose_path"
-    
+
         elif incoming_msg == "2":  # Back to main menu
             msg.body(
                 "Okay 💛 Sending you back to the main menu!\n\n"
@@ -477,31 +274,30 @@ def bot():
                 "3. Play 'What Would You Do?'"
             )
             user_state[from_number]["stage"] = "choose_path"
-    
+
         else:
             msg.body("Please reply with 1 or 2.")
-    
+
         return str(response)
-    
-    
+
     if state["stage"] == "track_active":
         profile = get_user_profile(from_number)
         track = profile.get("chosen_track")
         day = profile.get("current_day", 1)
         points = profile.get("points", 0)
-    
+
         # Fetch the lesson
         lesson = TRACKS[track][day-1]
-    
+
         choice = incoming_msg.strip().upper()
         if choice not in ["A", "B", "C"]:
             msg.body("Please reply with A, B, or C.")
             return str(response)
-    
+
         # Award points
         points += 10
         feedback = lesson["feedback"][choice]
-    
+
         # Update DB progress
         next_day = day + 1
         create_or_update_user(
@@ -510,7 +306,7 @@ def bot():
             current_day=next_day,
             points=points
         )
-    
+
         TOTAL_DAYS = 4
         if next_day <= TOTAL_DAYS:
             msg.body(
@@ -536,7 +332,7 @@ def bot():
                 "3. Play 'What Would You Do?'"
             )
             user_state[from_number]["stage"] = "choose_path"
-    
+
         return str(response)
 
     if state["stage"] == "choose_category":
@@ -552,12 +348,12 @@ def bot():
         if selected:
             # ✅ only save in memory, don’t push to DB
             user_state[from_number]["category"] = selected
-    
+
             user_state[from_number]["stage"] = "choose_scenario"
-    
+
             options = [s["scenario"] for s in SCENARIOS if s["category"] == selected]
             options.append("Something else — I want to describe my situation in my own words.")
-    
+
             user_state[from_number]["scenario_options"] = options
             option_text = "\n".join([f"{i+1}. {s}" for i, s in enumerate(options)])
             msg.body(
@@ -570,23 +366,22 @@ def bot():
             msg.body("Please choose a valid number from the list above.")
         return str(response)
 
-
     if state["stage"] == "choose_scenario":
         options = user_state[from_number].get("scenario_options", [])
         try:
             selected_index = int(incoming_msg) - 1
             if 0 <= selected_index < len(options) - 1:
                 scenario = options[selected_index]
-    
+
                 # ✅ Save only in memory, not DB
                 user_state[from_number]["scenario"] = scenario
                 user_state[from_number]["stage"] = "gpt_mode"
-    
+
                 log_event(from_number, "scenario_selected", {
                     "category": user_state[from_number].get("category"),
                     "scenario": scenario
                 })
-    
+
                 msg.body("Thanks for sharing that. I’m here for you 💛 Just tell me a bit more about what’s been going on, and we’ll work through it together.")
             elif selected_index == len(options) - 1:
                 user_state[from_number]["stage"] = "gpt_mode_custom"
@@ -598,18 +393,16 @@ def bot():
             msg.body("Please reply with the number of your choice.")
         return str(response)
 
-
-
     if state.get("stage") == "assessment" and from_number in user_sessions:
         session = user_sessions[from_number]
         q_index = session["current_q"]  # get current question index BEFORE it's incremented
-    
+
         log_event(from_number, "assessment_answered", {
             "question": assessment_questions[q_index]["text"],
             "answer": incoming_msg
         })
-        handle_assessment_answer(from_number, incoming_msg)
-        next_q = get_next_assessment_question(from_number)
+        handle_assessment_answer(user_sessions, from_number, incoming_msg)
+        next_q = get_next_assessment_question(user_sessions, from_number)
         if next_q:
             msg.body(next_q)
         else:
@@ -621,60 +414,47 @@ def bot():
                 "identity": identity
             })
 
-    
             # ✅ Offer next options after feedback
             msg.body(
-                feedback + 
+                feedback +
                 "\n\nWhat would you like to do next?\n1. Get advice\n2. Restart"
             )
             del user_sessions[from_number]
-    
+
             # ✅ Reset stage so they can choose what's next
             user_state[from_number]["stage"] = "choose_path"
         return str(response)
 
-
     if state["stage"] in ["gpt_mode", "gpt_mode_custom"]:
         scenario = user_state[from_number].get("scenario", "").strip()
         user_input = incoming_msg.strip()
-    
+
         if state["stage"] == "gpt_mode_custom":
             scenario = user_input
-    
+
         if not scenario:
             msg.body("Hmm, I didn’t quite catch that. Can you describe what’s going on again?")
             return str(response)
-    
+
         if not user_input:
             msg.body("Could you tell me a bit more about what's happening so I can help?")
             return str(response)
-            
+
         # ✅ Check relevance
         if not is_relevant(user_input):
             msg.body("I'm here for you 💛 Could you share a little more about what’s happening so I can support you better?")
             return str(response)
-    
+
         # ✅ Initialize conversation step if not already set
         if "current_step" not in user_state[from_number]:
             user_state[from_number]["current_step"] = "validation_exploration"
-        
-        current_step = user_state[from_number]["current_step"]
         if "free_chat_mode" not in user_state[from_number]:
             user_state[from_number]["free_chat_mode"] = False
 
+        current_step = user_state[from_number]["current_step"]
         free_chat_mode = user_state[from_number]["free_chat_mode"]
 
-        # ✅ Add Intent Detection HERE
-        def detect_intent(user_input):
-            lowered = user_input.lower()
-            if any(phrase in lowered for phrase in ["help me", "craft a message", "write a message", "what should i say", "how should i say it"]):
-                return "wants_message_help"
-            if any(phrase in lowered for phrase in ["advice", "what should i do", "what would you do", "can you advise"]):
-                return "wants_advice"
-            if any(phrase in lowered for phrase in ["i feel", "it hurts", "i'm sad", "i'm mad", "i'm confused", "i'm upset"]):
-                return "emotional_venting"
-            return "normal"
-
+        # ✅ Intent detection (from helpers)
         intent = detect_intent(user_input)
         log_event(from_number, "gpt_step", {
             "step": user_state[from_number]["current_step"],
@@ -689,14 +469,15 @@ def bot():
                 user_state[from_number]["current_step"] = "psychoeducation"
             elif intent == "emotional_venting" and current_step != "validation_exploration":
                 user_state[from_number]["current_step"] = "validation_exploration"
-        
+
         # ✅ After message help or drafting, move to free chat
         if user_state[from_number]["current_step"] in ["offer_message_help", "drafting_message", "closing"]:
             user_state[from_number]["free_chat_mode"] = True
             free_chat_mode = True
+
         # ✅ Build prompt based on the current step
         prompt = generate_prompt(current_step, scenario, user_input)
-        
+
         try:
             gpt_response = client.chat.completions.create(
                 model="gpt-4",
@@ -709,25 +490,30 @@ def bot():
             reply = gpt_response.choices[0].message.content.strip()
             msg.body(reply)
             log_event(from_number, "gpt_reply_sent", {
-                    "step": current_step,
-                    "reply": reply
-                })
-        
+                "step": current_step,
+                "reply": reply
+            })
+
             # ✅ After GPT reply, move to next step
-            update_user_step(from_number)
-        
+            update_user_step(user_state, from_number)
+
         except Exception as e:
             print("[ERROR in GPT fallback]", str(e))
             msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
-        
+
         # ✅ Launch guardrail check in background
         history = user_state[from_number].get("history", [])
         history.append(f"User: {user_input}")
         user_state[from_number]["history"] = history
-    
+
         launch_guardrail_check(from_number, history, user_input)
 
         return str(response)
+
+    # default
+    msg.body("Let’s start over — type 'restart'.")
+    return str(response)
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # fallback to 5000 if running locally
     app.run(host="0.0.0.0", port=port)
