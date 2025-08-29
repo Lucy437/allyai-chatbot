@@ -80,6 +80,7 @@ assessment_questions: List[Dict] = [
     },
 ]
 
+
 # ------------------------- Session helpers ------------------------- #
 def get_next_assessment_question(
     user_sessions: Dict[str, dict],
@@ -119,6 +120,7 @@ def handle_assessment_answer(
     session["answers"].append({"dimension": q["dimension"], "score": score})
     session["current_q"] += 1
 
+
 # ------------------------- Scoring & feedback ------------------------- #
 def calculate_trait_scores(answers: List[Dict]) -> Dict[str, int]:
     """Aggregate scores per dimension."""
@@ -139,16 +141,13 @@ def assign_identity(scores: Dict[str, int]) -> str:
 
     identity_map = {
         frozenset(["Confidence", "Communication"]): (
-            "👑 The Empowered Queen\n"
-            "You own your voice and lead with unapologetic strength."
+            "👑 The Empowered Queen\n" "You own your voice and lead with unapologetic strength."
         ),
         frozenset(["Self-Awareness", "Empathy"]): (
-            "🪞 The Healer Oracle\n"
-            "Your empathy is matched by deep inner wisdom."
+            "🪞 The Healer Oracle\n" "Your empathy is matched by deep inner wisdom."
         ),
         frozenset(["Boundary-Setting", "Self-Respect"]): (
-            "🛡️ The Guardian Queen\n"
-            "You defend your peace with grace and clarity."
+            "🛡️ The Guardian Queen\n" "You defend your peace with grace and clarity."
         ),
     }
     return identity_map.get(

@@ -30,15 +30,25 @@ def detect_intent(user_input: str) -> str:
     t = (user_input or "").lower()
 
     message_help_phrases = [
-        "help me", "craft a message", "write a message",
-        "what should i say", "how should i say it", "can you write"
+        "help me",
+        "craft a message",
+        "write a message",
+        "what should i say",
+        "how should i say it",
+        "can you write",
     ]
-    advice_phrases = [
-        "advice", "what should i do", "what would you do", "can you advise"
-    ]
+    advice_phrases = ["advice", "what should i do", "what would you do", "can you advise"]
     venting_phrases = [
-        "i feel", "it hurts", "i'm sad", "i am sad", "i'm mad", "i am mad",
-        "i'm confused", "i am confused", "i'm upset", "i am upset"
+        "i feel",
+        "it hurts",
+        "i'm sad",
+        "i am sad",
+        "i'm mad",
+        "i am mad",
+        "i'm confused",
+        "i am confused",
+        "i'm upset",
+        "i am upset",
     ]
 
     if any(p in t for p in message_help_phrases):
@@ -59,6 +69,7 @@ _STEP_NEXT = {
     "drafting_message": "closing",
     "closing": "closing",
 }
+
 
 def update_user_step(user_state: Dict[str, dict], user_id: str) -> None:
     """
@@ -124,6 +135,5 @@ def generate_prompt(current_step: str, scenario: str, user_input: str) -> str:
 
     # Fallback
     return (
-        "You are AllyAI — be warm, validating, and brief.\n"
-        f"Respond naturally to: {user_input}"
+        "You are AllyAI — be warm, validating, and brief.\n" f"Respond naturally to: {user_input}"
     )

@@ -20,7 +20,8 @@ def init_db():
     cur = conn.cursor()
 
     # Table for logging events
-    cur.execute("""
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS usage_events (
             id SERIAL PRIMARY KEY,
             user_id TEXT,
@@ -28,10 +29,12 @@ def init_db():
             timestamp TIMESTAMPTZ,
             payload JSONB
         )
-    """)
+    """
+    )
 
     # Table for storing user profiles
-    cur.execute("""
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS user_profiles (
             phone_number TEXT PRIMARY KEY,
             name TEXT,
@@ -42,7 +45,8 @@ def init_db():
             waiting_for_answer BOOLEAN DEFAULT FALSE,
             last_updated TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         )
-    """)
+    """
+    )
 
     conn.commit()
     cur.close()
@@ -54,17 +58,29 @@ def log_event(user_id, event_type, payload_dict):
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO usage_events (user_id, event_type, timestamp, payload)
             VALUES (%s, %s, %s, %s)
-        """, (user_id, event_type, datetime.utcnow(), json.dumps(payload_dict)))
+        """,
+            (user_id, event_type, datetime.utcnow(), json.dumps(payload_dict)),
+        )
         conn.commit()
         cur.close()
         conn.close()
     except Exception as e:
         print(f"[Analytics Error] Failed to log event: {e}")
 
-def create_or_update_user(phone, name=None, chosen_track=None, current_day=None, points=None, streak=None, waiting_for_answer=None):
+
+def create_or_update_user(
+    phone,
+    name=None,
+    chosen_track=None,
+    current_day=None,
+    points=None,
+    streak=None,
+    waiting_for_answer=None,
+):
     """Insert or update a user profile in Postgres."""
     try:
         conn = get_connection()
@@ -110,10 +126,13 @@ def get_user_profile(phone):
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             SELECT phone_number, name, chosen_track, current_day, points, streak, waiting_for_answer
             FROM user_profiles WHERE phone_number = %s
-        """, (phone,))
+        """,
+            (phone,),
+        )
         row = cur.fetchone()
         cur.close()
         conn.close()
@@ -126,7 +145,7 @@ def get_user_profile(phone):
                 "current_day": row[3],
                 "points": row[4],
                 "streak": row[5],
-                "waiting_for_answer": bool(row[6])
+                "waiting_for_answer": bool(row[6]),
             }
         return None
     except Exception as e:

@@ -50,15 +50,17 @@ user_sessions = {}
 # OpenAI client
 client = OpenAI()
 
+
 # WhatsApp bot route
 @app.route("/bot", methods=["POST"])
 def bot():
     from_number = request.values.get("From")
     incoming_msg = request.values.get("Body", "").strip()
-    log_event(from_number, "message_received", {
-        "input": incoming_msg,
-        "stage": user_state.get(from_number, {}).get("stage", "unknown")
-    })
+    log_event(
+        from_number,
+        "message_received",
+        {"input": incoming_msg, "stage": user_state.get(from_number, {}).get("stage", "unknown")},
+    )
 
     response = MessagingResponse()
     msg = response.message()
@@ -112,7 +114,9 @@ def bot():
             print("🆕 New user detected:", from_number)
             user_state[from_number] = {"stage": "intro"}
             user_profiles[from_number] = {}
-            msg.body("Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?")
+            msg.body(
+                "Hi, I'm Ally 👋\nI'm here to support you in understanding your relationships and yourself better.\n\nWhat’s your name?"
+            )
             return str(response)
 
     # ✅ Fallback if stage is missing
@@ -150,7 +154,9 @@ def bot():
     if state["stage"] == "choose_path":
         if incoming_msg == "1":
             user_state[from_number]["stage"] = "choose_category"
-            msg.body("Choose a topic you want to talk about:\n1. Romantic Partner Issues\n2. Friendship Challenges\n3. Family Tensions\n4. Building Self-Confidence\n5. Overcoming Insecurity\n6. Urgent Advice")
+            msg.body(
+                "Choose a topic you want to talk about:\n1. Romantic Partner Issues\n2. Friendship Challenges\n3. Family Tensions\n4. Building Self-Confidence\n5. Overcoming Insecurity\n6. Urgent Advice"
+            )
         elif incoming_msg == "2":
             user_sessions[from_number] = {"current_q": 0, "answers": []}
             user_state[from_number]["stage"] = "assessment"
@@ -206,22 +212,20 @@ def bot():
         track_map = {
             "1": "Building Confidence",
             "2": "Recognizing Red Flags",
-            "3": "Setting Boundaries & Saying No"
+            "3": "Setting Boundaries & Saying No",
         }
         selected = track_map.get(incoming_msg)
         if selected and selected in TRACKS and len(TRACKS[selected]) > 0:
             # ✅ Save progress directly to DB
             create_or_update_user(
-                from_number,
-                chosen_track=selected,
-                current_day=1,
-                points=0,
-                streak=0
+                from_number, chosen_track=selected, current_day=1, points=0, streak=0
             )
 
             # Load Day 1 lesson
             day_data = TRACKS[selected][0]
-            options_text = "\n".join([f"{opt}) {text}" for opt, text in day_data["options"].items()])
+            options_text = "\n".join(
+                [f"{opt}) {text}" for opt, text in day_data["options"].items()]
+            )
 
             msg.body(
                 f"🎯 You chose *{selected}*!\n\n"
@@ -243,7 +247,7 @@ def bot():
         if incoming_msg == "1":  # Go to next lesson
             TOTAL_DAYS = 4
             if day <= TOTAL_DAYS:
-                lesson = TRACKS[track][day-1]
+                lesson = TRACKS[track][day - 1]
                 title = lesson.get("title", lesson["scenario"])
 
                 msg.body(
@@ -287,7 +291,7 @@ def bot():
         points = profile.get("points", 0)
 
         # Fetch the lesson
-        lesson = TRACKS[track][day-1]
+        lesson = TRACKS[track][day - 1]
 
         choice = incoming_msg.strip().upper()
         if choice not in ["A", "B", "C"]:
@@ -300,12 +304,7 @@ def bot():
 
         # Update DB progress
         next_day = day + 1
-        create_or_update_user(
-            from_number,
-            chosen_track=track,
-            current_day=next_day,
-            points=points
-        )
+        create_or_update_user(from_number, chosen_track=track, current_day=next_day, points=points)
 
         TOTAL_DAYS = 4
         if next_day <= TOTAL_DAYS:
@@ -342,7 +341,7 @@ def bot():
             "3": "Family Tensions",
             "4": "Building Self-Confidence",
             "5": "Overcoming Insecurity",
-            "6": "Urgent Advice"
+            "6": "Urgent Advice",
         }
         selected = category_map.get(incoming_msg)
         if selected:
@@ -377,15 +376,20 @@ def bot():
                 user_state[from_number]["scenario"] = scenario
                 user_state[from_number]["stage"] = "gpt_mode"
 
-                log_event(from_number, "scenario_selected", {
-                    "category": user_state[from_number].get("category"),
-                    "scenario": scenario
-                })
+                log_event(
+                    from_number,
+                    "scenario_selected",
+                    {"category": user_state[from_number].get("category"), "scenario": scenario},
+                )
 
-                msg.body("Thanks for sharing that. I’m here for you 💛 Just tell me a bit more about what’s been going on, and we’ll work through it together.")
+                msg.body(
+                    "Thanks for sharing that. I’m here for you 💛 Just tell me a bit more about what’s been going on, and we’ll work through it together."
+                )
             elif selected_index == len(options) - 1:
                 user_state[from_number]["stage"] = "gpt_mode_custom"
-                msg.body("No problem — just type out what’s going on and I’ll do my best to help 💬")
+                msg.body(
+                    "No problem — just type out what’s going on and I’ll do my best to help 💬"
+                )
             else:
                 msg.body("Please choose a valid number from the list.")
         except Exception as e:
@@ -397,10 +401,11 @@ def bot():
         session = user_sessions[from_number]
         q_index = session["current_q"]  # get current question index BEFORE it's incremented
 
-        log_event(from_number, "assessment_answered", {
-            "question": assessment_questions[q_index]["text"],
-            "answer": incoming_msg
-        })
+        log_event(
+            from_number,
+            "assessment_answered",
+            {"question": assessment_questions[q_index]["text"], "answer": incoming_msg},
+        )
         handle_assessment_answer(user_sessions, from_number, incoming_msg)
         next_q = get_next_assessment_question(user_sessions, from_number)
         if next_q:
@@ -409,16 +414,10 @@ def bot():
             scores = calculate_trait_scores(user_sessions[from_number]["answers"])
             identity = assign_identity(scores)
             feedback = generate_feedback(scores, identity)
-            log_event(from_number, "assessment_completed", {
-                "scores": scores,
-                "identity": identity
-            })
+            log_event(from_number, "assessment_completed", {"scores": scores, "identity": identity})
 
             # ✅ Offer next options after feedback
-            msg.body(
-                feedback +
-                "\n\nWhat would you like to do next?\n1. Get advice\n2. Restart"
-            )
+            msg.body(feedback + "\n\nWhat would you like to do next?\n1. Get advice\n2. Restart")
             del user_sessions[from_number]
 
             # ✅ Reset stage so they can choose what's next
@@ -442,7 +441,9 @@ def bot():
 
         # ✅ Check relevance
         if not is_relevant(user_input):
-            msg.body("I'm here for you 💛 Could you share a little more about what’s happening so I can support you better?")
+            msg.body(
+                "I'm here for you 💛 Could you share a little more about what’s happening so I can support you better?"
+            )
             return str(response)
 
         # ✅ Initialize conversation step if not already set
@@ -456,22 +457,35 @@ def bot():
 
         # ✅ Intent detection (from helpers)
         intent = detect_intent(user_input)
-        log_event(from_number, "gpt_step", {
-            "step": user_state[from_number]["current_step"],
-            "intent": intent,
-            "input": user_input
-        })
+        log_event(
+            from_number,
+            "gpt_step",
+            {
+                "step": user_state[from_number]["current_step"],
+                "intent": intent,
+                "input": user_input,
+            },
+        )
 
         if not free_chat_mode:
             if intent == "wants_message_help":
                 user_state[from_number]["current_step"] = "drafting_message"
-            elif intent == "wants_advice" and current_step not in ["psychoeducation", "empowerment", "drafting_message", "closing"]:
+            elif intent == "wants_advice" and current_step not in [
+                "psychoeducation",
+                "empowerment",
+                "drafting_message",
+                "closing",
+            ]:
                 user_state[from_number]["current_step"] = "psychoeducation"
             elif intent == "emotional_venting" and current_step != "validation_exploration":
                 user_state[from_number]["current_step"] = "validation_exploration"
 
         # ✅ After message help or drafting, move to free chat
-        if user_state[from_number]["current_step"] in ["offer_message_help", "drafting_message", "closing"]:
+        if user_state[from_number]["current_step"] in [
+            "offer_message_help",
+            "drafting_message",
+            "closing",
+        ]:
             user_state[from_number]["free_chat_mode"] = True
             free_chat_mode = True
 
@@ -483,23 +497,22 @@ def bot():
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": ALLYAI_SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
-                temperature=0.7
+                temperature=0.7,
             )
             reply = gpt_response.choices[0].message.content.strip()
             msg.body(reply)
-            log_event(from_number, "gpt_reply_sent", {
-                "step": current_step,
-                "reply": reply
-            })
+            log_event(from_number, "gpt_reply_sent", {"step": current_step, "reply": reply})
 
             # ✅ After GPT reply, move to next step
             update_user_step(user_state, from_number)
 
         except Exception as e:
             print("[ERROR in GPT fallback]", str(e))
-            msg.body("Something went wrong while generating a response. Please try again or type 'restart' to start over.")
+            msg.body(
+                "Something went wrong while generating a response. Please try again or type 'restart' to start over."
+            )
 
         # ✅ Launch guardrail check in background
         history = user_state[from_number].get("history", [])
@@ -513,6 +526,7 @@ def bot():
     # default
     msg.body("Let’s start over — type 'restart'.")
     return str(response)
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # fallback to 5000 if running locally
