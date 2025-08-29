@@ -1,0 +1,47 @@
+name: Twilio Smoke
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 10 * * *"   # daily at 10:00 UTC
+
+jobs:
+  twilio-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Twilio SDK
+        run: |
+          python -m pip install --upgrade pip
+          pip install twilio
+
+      - name: Verify Twilio credentials (no message sent)
+        env:
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN:  ${{ secrets.TWILIO_AUTH_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os, sys
+          from twilio.rest import Client
+
+          sid = os.getenv("TWILIO_ACCOUNT_SID")
+          token = os.getenv("TWILIO_AUTH_TOKEN")
+          if not sid or not token:
+              print("Missing Twilio secrets"); sys.exit(1)
+
+          try:
+              client = Client(sid, token)
+              # Free, safe call: fetch account info (auth check)
+              acc = client.api.accounts(sid).fetch()
+              name = acc.friendly_name or acc.sid
+              print(f"✅ Twilio reachable. Account: {name}")
+            # Optionally verify we can see resources without sending:
+              # nums = list(client.incoming_phone_numbers.stream(limit=1))
+              # print("Numbers visible:", len(nums))
+          except Exception as e:
+              print("❌ Twilio check failed:", e); sys.exit(1)
+          PY
