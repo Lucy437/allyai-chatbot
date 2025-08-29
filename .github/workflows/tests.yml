@@ -1,3 +1,4 @@
+# .github/workflows/tests.yml
 name: Tests
 on:
   push:
@@ -17,5 +18,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest
-      - name: Run tests
-        run: pytest -q
+      - name: Run tests (with collection output)
+        run: |
+          pytest -q --maxfail=1 --disable-warnings -vv
+          echo "--- pytest collection ---"
+          pytest --collect-only -q
