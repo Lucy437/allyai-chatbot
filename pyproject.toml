@@ -13,4 +13,5 @@ dependencies = [
   "twilio",
   "openai",
   "psycopg2-binary", # if using Postgres
+  "gunicorn",
 ]
