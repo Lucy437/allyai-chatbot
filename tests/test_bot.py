@@ -1,5 +1,9 @@
+import os, sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import pytest
 import main
+
 
 @pytest.fixture(autouse=True)
 def stub_db(monkeypatch):
