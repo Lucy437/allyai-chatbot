@@ -1,3 +1,11 @@
+
+![Tests](https://github.com/Lucy437/allyai-chatbot/actions/workflows/tests.yml/badge.svg)
+
+![Lint](https://github.com/Lucy437/allyai-chatbot/actions/workflows/lint.yml/badge.svg)
+
+![Autoformat](https://github.com/Lucy437/allyai-chatbot/actions/workflows/autoformat.yml/badge.svg)
+
+
 # 📘 AllyAI – Empowering Young Women with AI Coaching  
 
 AllyAI is a **WhatsApp-based AI coach** that supports girls and young women (15–25) with relationships, confidence, and emotional wellbeing.  
