@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+permissions:
+  contents: write   # allows the autoformat job to push a fix commit
+
+jobs:
+  autoformat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Black & Ruff
+        run: |
+          python -m pip install --upgrade pip
+          pip install black ruff
+      - name: Run Black & Ruff (fix)
+        run: |
+          black .
+          ruff check . --fix
+      - name: Commit changes
+        if: "github.event.head_commit.message != 'chore: autoformat'"
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: autoformat"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+
+  lint:
+    needs: autoformat            # <-- waits for autoformat to finish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install black ruff
+      - name: Black (check)
+        run: black --check .
+      - name: Ruff (lint)
+        run: ruff check .
