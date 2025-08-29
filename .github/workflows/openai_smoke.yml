@@ -1,0 +1,42 @@
+name: OpenAI Smoke
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 9 * * *"   # daily at 09:00 UTC
+
+jobs:
+  openai-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install OpenAI SDK
+        run: |
+          python -m pip install --upgrade pip
+          pip install openai
+
+      - name: Verify OpenAI key & endpoint
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os, sys
+          from openai import OpenAI
+          key = os.getenv("OPENAI_API_KEY")
+          if not key:
+              print("Missing OPENAI_API_KEY secret"); sys.exit(1)
+          client = OpenAI(api_key=key)
+          try:
+              # Safe, free call: list models (no tokens billed)
+              models = client.models.list()
+              n = len(models.data)
+              print(f"✅ OpenAI reachable. Models available: {n}")
+              if n == 0:
+                  raise RuntimeError("No models returned")
+          except Exception as e:
+              print("❌ OpenAI check failed:", e); sys.exit(1)
+          PY
