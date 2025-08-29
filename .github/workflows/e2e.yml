@@ -1,0 +1,44 @@
+name: E2E (Render)
+
+on:
+  workflow_dispatch:   # run manually
+  schedule:
+    - cron: "0 */12 * * *"   # every 12 hours (optional)
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: ${{ secrets.RENDER_BASE_URL }}   # e.g. https://allyai.onrender.com
+    steps:
+      - name: Check BASE_URL is set
+        run: 'test -n "$BASE_URL" || (echo "Missing RENDER_BASE_URL secret"; exit 1)'
+
+      # 1) Hit /bot like Twilio would (form-encoded)
+      - name: Call /bot endpoint
+        id: bot
+        run: |
+          # Use a fake phone; server doesn't verify Twilio signature
+          set -e
+          HTTP_CODE=$(curl -sS -o resp.xml -w "%{http_code}" \
+            -X POST "$BASE_URL/bot" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "From=+15550123456" \
+            --data-urlencode "Body=Hi")
+          echo "status=$HTTP_CODE" >> "$GITHUB_OUTPUT"
+          echo "---- Response ----"
+          head -c 500 resp.xml || true
+          echo
+
+          # Basic assertions
+          [ "$HTTP_CODE" = "200" ] || (echo "Non-200 from /bot: $HTTP_CODE"; exit 1)
+          # Twilio response should be TwiML with a <Message> element
+          grep -qi "<Message>" resp.xml || (echo "No <Message> in response"; exit 1)
+          # Look for a friendly intro prompt (avoid emoji / curly quotes brittleness)
+          grep -qi "your name" resp.xml || true
+
+      # 2) (Optional) health check if you expose /health
+      - name: Call /health (optional)
+        continue-on-error: true
+        run: |
+          curl -fsS "$BASE_URL/health" && echo "Health OK" || echo "No /health endpoint"
