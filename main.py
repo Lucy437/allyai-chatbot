@@ -50,6 +50,11 @@ user_sessions = {}
 # OpenAI client
 client = OpenAI()
 
+# health route
+@app.route("/health", methods=["GET"])
+def health():
+    return "ok", 200
+
 
 # WhatsApp bot route
 @app.route("/bot", methods=["POST"])
