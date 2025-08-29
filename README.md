@@ -35,6 +35,23 @@ This project is designed for social impact and is aligned with UNICEF’s goals 
   - Tracks user journeys (category chosen, assessment scores, distress/crisis counts).  
   - Can generate aggregated insights for program evaluation (while respecting user privacy).  
 
+
+---
+```plaintext
+allyai-chatbot/
+├─ main.py            # Main Flask app: Twilio webhook handler, conversation flow, GPT integration
+├─ helpers.py         # Utility functions: system prompt, intent detection, step progression, prompt generation
+├─ assessment.py      # Self-assessment module: questions, scoring logic, identity assignment, feedback generation
+├─ analytics.py       # Database + analytics: init, log events, create/update user profiles, fetch profile
+├─ guardrail.py       # Safety layer: runs guardrail checks (flags harmful/distress content)
+├─ scenarios.json     # Scenario library: predefined user situations grouped by category (e.g., partner, friends, family)
+├─ tracks.json        # Growth tracks for "What Would You Do?" game: lessons, options, feedback, challenges
+├─ requirements.txt   # Python dependencies for production (Flask, Twilio, OpenAI, Gunicorn, Postgres driver, etc.)
+├─ pyproject.toml     # Project metadata + dependencies (modern packaging standard)
+├─ uv.lock            # Lockfile for reproducible installs (used with `uv` / PEP 582 compatible tooling)
+├─ README.md          # Project documentation (overview, setup, usage, contribution guide)
+
+```
 ---
 
 ## 🛠️ Tech Stack  
