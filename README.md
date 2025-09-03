@@ -19,7 +19,8 @@ AllyAI is a **WhatsApp-based, gender-transformative AI coach** designed for girl
 It blends:  
 -  **Supportive, safe AI coaching** that feel warm and relatable  
 -  **Gamified learning tracks** to practice skills in a fun, engaging way  
--  **Built-in safety guardrails** that detect signs of emotional distress or crisis and ensure responsible, ethical use.
+-  **Built-in safety guardrails** that detect signs of emotional distress or crisis and ensure responsible, ethical use
+-  **Culturally sensitive design** that adapts to diverse contexts and lived experiences
 
 
 ---
