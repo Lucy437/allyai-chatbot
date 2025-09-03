@@ -12,16 +12,19 @@
 
 
 
-# 📘 AllyAI – Empowering Young Women with AI Coaching  
+# AllyAI – Empowering Young Women with AI Coaching  
 
-AllyAI is a **WhatsApp-based AI coach** that supports girls and young women (15–25) with relationships, confidence, and emotional wellbeing.  
-It combines **warm coaching conversations**, **gamified learning tracks**, and a **safety guardrail agent** that detects signs of emotional distress or crisis.  
+AllyAI is a **WhatsApp-based, gender-transformative AI coach** designed for girls and young women (ages 15–25) to build healthier relationships, boost confidence, and strengthen emotional wellbeing and resilience.  
 
-This project is designed for social impact and is aligned with UNICEF’s goals for digital youth empowerment and protection.  
+It blends:  
+-  **Supportive, safe AI coaching** that feel warm and relatable  
+-  **Gamified learning tracks** to practice skills in a fun, engaging way  
+-  **Built-in safety guardrails** that detect signs of emotional distress or crisis and ensure responsible, ethical use.
+
 
 ---
 
-## 🌟 Features  
+## Features  
 
 - **Conversational Coaching**  
   - AllyAI speaks like a supportive big sister or mentor.  
@@ -68,7 +71,7 @@ allyai-chatbot/
 ```
 ---
 
-## 🛠️ Tech Stack  
+##  Tech Stack  
 
 - **Backend Framework**: Flask (Python)  
 - **AI Model**: OpenAI GPT (chat + classification)  
@@ -78,15 +81,24 @@ allyai-chatbot/
 
 ---
 
-## 🚀 Quick Start  
+## Quick Start  
 
-### 5. Connect via WhatsApp  
+### Connect via WhatsApp  
 - Send `join deal-chest` to **+1 415 523 8886** (Twilio sandbox).  
-- Then message your bot 🎉  
+- Then message your bot
+- Type Hi to get started.
+- At any time, type Restart to return to the main menu.
+- When selecting options, reply only with the number (e.g., 1 or 2) — do not add commas, periods, or extra characters.
+
+#### Troubleshooting 
+- If you don’t get a reply right away, wait a few seconds and try again.
+- Make sure you’re sending messages to the correct number (+1 415 523 8886).
+- If the sandbox session expires, you may need to resend join deal-chest to reconnect.
+
 
 ---
 
-## 🧠 Guardrail Agent  
+##  Guardrail Agent  
 
 - Lives in `guardrail.py`  
 - Runs as an independent AI agent in a background thread.  
@@ -101,7 +113,7 @@ allyai-chatbot/
 
 ---
 
-## 🌍 Social Impact Alignment  
+##  Social Impact Alignment  
 
 - **Empowerment**: Helps girls practice confidence, boundaries, and healthy relationships.  
 - **Safety**: Detects distress early and connects youth to *human* support networks.  
@@ -110,7 +122,7 @@ allyai-chatbot/
 
 ---
 
-## 🔒 Safeguards  
+##  Safeguards  
 
 - No sensitive data stored beyond what’s needed for conversation continuity.  
 - Distress/crisis classifications logged **only in aggregate** for reporting.  
@@ -118,11 +130,11 @@ allyai-chatbot/
 
 ---
 
-## 📜 License  
+## License  
 
 MIT License – open for nonprofits, social good, and research.  
 
 ---
 
-✨ AllyAI is not a replacement for therapy or crisis intervention.  
+AllyAI is not a replacement for therapy or crisis intervention.  
 It is a **supportive AI coach** that empowers youth and connects them to real help when needed.  
